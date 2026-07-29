@@ -1,0 +1,35 @@
+path	role	source	release_note
+LatentModelFinal.py	VAE model implementation	related_materials/code/LatentModelFinal.py	Core latent encoder-decoder architecture.
+DenoisingMLPFinal.py	Conditional diffusion denoiser	related_materials/code/DenoisingMLPFinal.py	Core residual MLP denoiser and condition/timestep encoders.
+util_latent.py	VAE training utilities	related_materials/code/util_latent.py	Dataset wrapper and latent training loop.
+util_diff.py	Diffusion training utilities	related_materials/code/util_diff.py	Condition parser, cached latent dataset and diffusion training loop.
+util_inference_diff.py	Diffusion inference utilities	related_materials/code/util_inference_diff.py	Batch inference helpers for Tahoe-style and generic condition settings.
+util_metrics.py	Metric utilities	related_materials/code/util_metrics.py	Condition-level expression and effect metric helpers.
+util_plot.py	Example plotting utilities	related_materials/code/util_plot.py	Cleaned ASCII release copy used by example scripts.
+examples/cellline_drug_dose_tahoe/train_latent_model.py	Tahoe VAE training entry point	related_materials/code/train_latent_model.py	Release copy parameterized with --data_root pointing to one processed Tahoe dataset folder.
+examples/cellline_drug_dose_tahoe/train_diffusionmlp_model.py	Tahoe diffusion training entry point	related_materials/code/train_diffusionmlp_model.py	Release copy parameterized with --data_root pointing to one processed Tahoe dataset folder and external latent_dir.
+examples/cellline_drug_dose_tahoe/run_latent_inference.py	Tahoe VAE reconstruction inference	related_materials/code/run_latent_inference.py	Release copy parameterized with --data_root pointing to one processed Tahoe dataset folder.
+examples/cellline_drug_dose_tahoe/run_diff_inference.py	All-condition Tahoe diffusion inference	related_materials/code all-condition diffusion inference source	Release copy parameterized with --data_root, --num_samples and optional --save_latent_steps.
+examples/cellline_drug_dose_tahoe/decode_diffusion_latents_and_metrics.py	Tahoe latent-output decoding and metric export	related_materials/code latent decode and metric source	Release copy parameterized with --data_root; per-cell expression arrays are opt-in with --save_cf_expr.
+examples/cellline_drug_dose_tahoe/compute_simple_baselines.py	Tahoe simple baseline benchmark	internal simple-baseline analysis scripts	Release implementation computes train-only MatchedCtrl, CellLineMean, DrugDoseMean and AdditiveMean expression/effect metrics from processed Tahoe split files.
+examples/exp_pbmc_ifn.py	PBMC IFN transfer experiment	related_materials/code PBMC IFN experiment source	Release copy parameterized with --basedir and --output_dir.
+examples/exp_colon_development.py	Colon-development transfer experiment	related_materials/code colon-development experiment source	Release copy parameterized with --basedir and --output_dir.
+examples/prepare_drug_embedding_tensor.py	Drug-embedding alignment helper	derived from related_materials/code/get_drug_emb_pretrain.py	Optional release helper for constructing drug_emb_pretrained tensors.
+examples/cellline_drug_dose_tahoe/train_latent.sh	Tahoe VAE shell example	related_materials/code/train_latent.sh	Release wrapper uses GPU_ID and DATA_DIR environment variables.
+examples/cellline_drug_dose_tahoe/train_diffusion.sh	Tahoe diffusion shell example	related_materials/code/train_diffusion.sh	Release wrapper uses GPU_ID, DATA_DIR and LATENT_DIR environment variables.
+examples/cellline_drug_dose_tahoe/README.md	Tahoe experiment README	manuscript/supplementary/Code/PerturbLDM/examples/cellline_drug_dose_tahoe/README.md	Documents the Tahoe-specific workflow order after folder reorganization.
+README.md	Release documentation	manuscript/supplementary/Code/PerturbLDM/README.md	Explains scope, layout and minimal commands.
+requirements.txt	Minimal dependency hints	manuscript/supplementary/Code/PerturbLDM/requirements.txt	Lists major Python packages used by the code snapshot.
+__init__.py	Package marker	manuscript/supplementary/Code/PerturbLDM/__init__.py	Provides convenient imports for core classes.
+configs/manuscript_active_run_manifest.tsv	Colon/PBMC exact active-run configuration index	external-local recovered active runs	Small exact configs are included; large checkpoints remain external.
+configs/colon_active_run/latent_config.json	Colon active VAE config	external-local recovered active run	Exact manuscript-active 15,000-step config.
+configs/colon_active_run/denoising_setting_config.json	Colon active denoiser config	external-local recovered active run	Exact continuous broad-stage conditioning config.
+configs/colon_active_run/diff_train_config_dict.json	Colon active diffusion config	external-local recovered active run	Exact manuscript-active 1,200-epoch config.
+configs/pbmc_active_run/latent_config.json	PBMC active VAE config	external-local recovered active run	Exact manuscript-active 2,000-gene/128-latent config.
+configs/pbmc_active_run/denoising_setting_config.json	PBMC active denoiser config	external-local recovered active run	Exact cell-type/stimulation conditioning config.
+configs/pbmc_active_run/diff_train_config_dict.json	PBMC active diffusion config	external-local recovered active run	Exact manuscript-active 2,000-epoch config.
+input_contracts/README.md	External-input policy	manuscript reproducibility release contract	Documents metrics-first release and external staging.
+input_contracts/external_input_manifest.tsv	External object identity manifest	recovered colon/PBMC objects	Relative staging paths, sizes and SHA256; objects are not included.
+examples/pbmc_ifnb/README.md	PBMC IFN-beta example guide	manuscript PBMC design and active configuration	Documents the biological task, exact split, commands and interpretation boundaries.
+examples/pbmc_ifnb/audit_input.py	PBMC input and split audit	derived release utility	Read-only validation of required annotations and target-cell hold-out membership.
+examples/pbmc_ifnb/split_contract.tsv	PBMC split contract	manuscript-active PBMC experiment	Machine-readable priority rules for excluded, held-out and fitting cells.

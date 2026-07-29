@@ -1,0 +1,6 @@
+type,category,path,size_bytes
+script,distribution_metrics,scripts/distribution_metrics/chemcpa_distribution_metrics.py,12012
+script,distribution_metrics,scripts/distribution_metrics/cpa_random_counterfactor_distribution.py,84870
+script,inference,scripts/inference/cpa_random_counterfactual_inference_final_full_modified_gauss.py,27098
+script,inference_metrics,scripts/inference_metrics/update_cpa_random_performance.py,17038
+script,training,scripts/training/CPA_global_random_final_pretrain_gauss.py,16554

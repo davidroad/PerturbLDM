@@ -1,0 +1,7 @@
+module	run_id	config_role	relative_config_path	release_state	notes
+Fetal colon	development_colon_mse_800_0309-040723	latent training	configs/colon_active_run/latent_config.json	included	Exact saved active-run JSON; example defaults synchronized to 15,000 steps.
+Fetal colon	development_colon_mse_800_0309-040723	denoising architecture	configs/colon_active_run/denoising_setting_config.json	included	Continuous broad_stage conditioning.
+Fetal colon	development_colon_mse_800_0309-040723	diffusion training	configs/colon_active_run/diff_train_config_dict.json	included	Exact saved active-run JSON; 1,200 epochs.
+PBMC	pbmc_mse_2000_ld128_nk_intrain_0307-052729	latent training	configs/pbmc_active_run/latent_config.json	included	Exact saved active-run JSON; 2,000-gene input and 128-dimensional latent space.
+PBMC	pbmc_mse_2000_ld128_nk_intrain_0307-052729	denoising architecture	configs/pbmc_active_run/denoising_setting_config.json	included	Categorical cell-type and stimulation conditioning.
+PBMC	pbmc_mse_2000_ld128_nk_intrain_0307-052729	diffusion training	configs/pbmc_active_run/diff_train_config_dict.json	included	Exact saved active-run JSON; 2,000 epochs.

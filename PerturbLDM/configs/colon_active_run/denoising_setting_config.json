@@ -1,0 +1,16 @@
+{
+    "latent_dim": 64,
+    "condition_setting_dict": {
+        "broad_stage": [
+            "continuous",
+            1
+        ]
+    },
+    "context_dim": 256,
+    "time_emb_dim": 32,
+    "hidden_dim": 256,
+    "num_layers": 4,
+    "dropout": 0.2,
+    "use_post_norm": true,
+    "use_residual": true
+}

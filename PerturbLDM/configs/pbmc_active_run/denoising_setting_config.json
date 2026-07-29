@@ -1,0 +1,20 @@
+{
+    "latent_dim": 128,
+    "condition_setting_dict": {
+        "cell.type": [
+            "categorical",
+            7
+        ],
+        "stim": [
+            "categorical",
+            2
+        ]
+    },
+    "context_dim": 256,
+    "time_emb_dim": 32,
+    "hidden_dim": 256,
+    "num_layers": 4,
+    "dropout": 0.2,
+    "use_post_norm": true,
+    "use_residual": true
+}

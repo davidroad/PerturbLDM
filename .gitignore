@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.h5ad
+*.h5
+*.pth
+*.pt
+*.npy
+*.npz
+*.log
+.DS_Store
+external_inputs/
+outputs/
+train_results/

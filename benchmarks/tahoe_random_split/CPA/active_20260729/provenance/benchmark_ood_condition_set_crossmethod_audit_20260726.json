@@ -1,0 +1,63 @@
+{
+  "all_methods_identical_13942_condition_set": true,
+  "cell_line_mapping": "figshare/inputs/plotting_inputs/tahoe/split_cellline_condition_counts.csv",
+  "methods": {
+    "CPA": {
+      "rows": 13942,
+      "unique_conditions": 13942
+    },
+    "Diffusion": {
+      "rows": 13942,
+      "unique_conditions": 13942
+    },
+    "MLP": {
+      "rows": 13942,
+      "unique_conditions": 13942
+    },
+    "RF": {
+      "rows": 13942,
+      "unique_conditions": 13942
+    },
+    "TrivalZero": {
+      "rows": 13942,
+      "unique_conditions": 13942
+    },
+    "chemCPA": {
+      "rows": 13942,
+      "unique_conditions": 13942
+    },
+    "scGen": {
+      "rows": 13942,
+      "unique_conditions": 13942
+    }
+  },
+  "normalization": {
+    "cell_line": "CVCL mapped to canonical cell name",
+    "dose": "hyphen decimal to numeric; chemCPA May-00 interpreted as 5.0",
+    "drug": "trim whitespace; DMSO-TF normalized to DMSO_TF"
+  },
+  "pairwise_symmetric_differences": {
+    "CPA vs Diffusion": 0,
+    "CPA vs MLP": 0,
+    "CPA vs RF": 0,
+    "CPA vs TrivalZero": 0,
+    "CPA vs chemCPA": 0,
+    "CPA vs scGen": 0,
+    "Diffusion vs MLP": 0,
+    "Diffusion vs RF": 0,
+    "Diffusion vs TrivalZero": 0,
+    "Diffusion vs chemCPA": 0,
+    "Diffusion vs scGen": 0,
+    "MLP vs RF": 0,
+    "MLP vs TrivalZero": 0,
+    "MLP vs chemCPA": 0,
+    "MLP vs scGen": 0,
+    "RF vs TrivalZero": 0,
+    "RF vs chemCPA": 0,
+    "RF vs scGen": 0,
+    "TrivalZero vs chemCPA": 0,
+    "TrivalZero vs scGen": 0,
+    "chemCPA vs scGen": 0
+  },
+  "source": "figshare/inputs/plotting_inputs/tahoe/fig2b_absolute_expression/learned_methods_condition_metrics.csv.gz"
+}

@@ -1,0 +1,55 @@
+{
+  "contract_version": "2026-07-27.2",
+  "seed": 42,
+  "unit_of_analysis": "drug-dose-cell-line condition",
+  "target": "measured treated-condition mean minus matched cell-line control mean",
+  "selection_metric": "validation delta-expression mean squared error pooled across condition-gene pairs",
+  "condition_id_normalization": {
+    "cell_line": "trim ends and replace CVCL_ with CVCL-",
+    "drug": "trim ends and replace DMSO_TF with DMSO-TF while preserving meaningful internal spaces",
+    "dose": {"0.05": "0-05", "0.5": "0-5", "5.0": "5-0"},
+    "match_rule": "exact one-to-one manifest matching after normalization; fail on unmatched or duplicated IDs"
+  },
+  "diagnostic_metrics": [
+    "median per-condition delta Pearson correlation",
+    "mean per-condition absolute-expression R2",
+    "mean per-condition absolute-expression Pearson correlation"
+  ],
+  "split": {
+    "manifest": "../../manifests/cpa_condition_assignments_seed42.csv",
+    "internal_train_conditions": 29277,
+    "validation_conditions": 3252,
+    "external_ood_conditions": 13942,
+    "final_fit": "candidate models are fitted on all 29277 internal-training conditions",
+    "formal_validation": "the unchanged 3252 conditions are used for hyperparameter and checkpoint selection",
+    "external_test_access": "prohibited until both final MLP and RF model records are frozen"
+  },
+  "mlp": {
+    "hidden_layers": [512, 256],
+    "activation": "ReLU",
+    "batch_normalization": "after first hidden layer",
+    "learning_rates": [0.0001, 0.0005, 0.001],
+    "dropout_rates": [0.0, 0.1, 0.2, 0.3],
+    "optimizer": "Adam",
+    "weight_decay": 0.0,
+    "batch_size": 1024,
+    "max_epochs": 100,
+    "validation_every_epoch": true,
+    "early_stopping_patience": 10,
+    "early_stopping_min_delta": 0.00001,
+    "checkpoint_rule": "lowest validation delta-expression MSE"
+  },
+  "random_forest": {
+    "n_estimators": 300,
+    "min_samples_leaf": [5, 20, 50],
+    "max_depth": 10,
+    "max_features": "sqrt",
+    "bootstrap": true,
+    "n_jobs": 24,
+    "random_state": 42,
+    "matched_control_feature_count": 1500,
+    "matched_control_feature_selection": "highest variance across internal-training condition control profiles only",
+    "categorical_encoding": "one-hot fitted on internal training conditions only",
+    "checkpoint_rule": "lowest validation delta-expression MSE"
+  }
+}

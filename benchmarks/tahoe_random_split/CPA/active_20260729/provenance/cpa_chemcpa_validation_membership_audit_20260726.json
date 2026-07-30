@@ -1,0 +1,16 @@
+{
+  "condition_definition": "cell_line_drug_dose_str",
+  "source_official_train_conditions": 32529,
+  "validation_fraction": 0.1,
+  "split_seed": 42,
+  "rng_implementation": "NumPy legacy RandomState/MT19937 in both implementations",
+  "chemcpa_validation_conditions": 3252,
+  "cpa_validation_conditions": 3252,
+  "validation_sets_identical": true,
+  "cpa_only_count": 0,
+  "chemcpa_only_count": 0,
+  "cpa_only_examples": [],
+  "chemcpa_only_examples": [],
+  "chemcpa_source": "../../external_inputs/tahoe/train_metadf.csv",
+  "cpa_source": "../../manifests/cpa_condition_assignments_seed42.csv"
+}

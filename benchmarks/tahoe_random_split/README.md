@@ -1,70 +1,74 @@
 # Tahoe random-split benchmark code
 
-This directory contains the code lineage consistent with the current
-13,942-condition Tahoe absolute-expression benchmark in Fig. 2b.
+This directory contains the code and compact provenance for the active
+13,942-condition Tahoe benchmark in manuscript Fig. 2.
 
-## Version decision
+## Active analysis
 
-`script.zip` is a legacy development archive. Its May-June 2025 baseline code
-evaluates matched-control-relative deltas, and its split JSON describes
-4,674/10,906 single-dose conditions rather than the current
-32,529/13,942-condition, three-dose benchmark. It is not the Fig. 2b producer.
+The metadata-only split in `manifests/cpa_condition_assignments_seed42.csv`
+contains 29,277 fitting, 3,252 validation and 13,942 external-test conditions.
+All learned comparators use this condition membership; external-test responses
+are excluded from hyperparameter and checkpoint selection.
 
-The release-facing code is:
+- `baseline/active_20260729/`: active MLP and random-forest fitting, validation
+  selection and gated external-test inference.
+- `CPA/active_20260729/`: corrected condition-disjoint CPA training, selected
+  checkpoint, inference and distribution metrics.
+- `chemCPA/`: frozen chemCPA training and inference lineage.
+- `plotting/`: relative-path figure and selection-diagnostic wrappers.
 
-- `baseline/`: the July 2025 `save_expression` RF/MLP program. Its 41,826
-  original condition rows (MLP, RF and matched-control/no-effect baseline) match
-  the released rows after identifier normalization and CSV rounding.
-- `CPA/`: the Gaussian CPA training, April 2026 inference and CPA-row update
-  chain used by the active CPA-updated table.
-- `chemCPA/`: the optimized random-counterfactual workflow, not the older
-  chemCPA draft in `script.zip`.
-- `plotting/`: a standalone relative-path wrapper replacing the historical
-  v5 -> v3 -> v2 plotting chain, plus a result-lineage verifier.
+Older scripts remain under the method-level `scripts/` directories and are
+labelled `legacy` in each `SCRIPT_MANIFEST.csv`; they are retained for
+provenance and are not the producer of the active refreshed values.
 
 ## Data boundary
 
-GitHub is code-only. Exact derived condition-level tables and the original
-RF/MLP and CPA metric outputs are in the paired Figshare package under
-`inputs/plotting_inputs/tahoe/fig2b_absolute_expression/`. Raw Tahoe H5AD files
-and model checkpoints are not copied.
+GitHub is code-focused. Stage prepared Tahoe objects under
+`external_inputs/tahoe/` as documented in the active method READMEs. Raw H5AD
+files, checkpoints, condition-mean arrays and per-cell prediction objects are
+not included.
 
-## Recreate the summary and panel
+The paired Figshare package contains the compact condition-level metric tables,
+model-selection histories and manuscript source data. The split manifest is
+included here because it is lightweight metadata required to reproduce exact
+fitting, validation and external-test membership.
+
+## Recreate Fig. 2b
 
 ```bash
-python github/benchmarks/tahoe_random_split/plotting/create_fig2b_absolute_expression_benchmark.py \
+python plotting/create_fig2b_absolute_expression_benchmark.py \
   --learned-table figshare/inputs/plotting_inputs/tahoe/fig2b_absolute_expression/learned_methods_condition_metrics.csv.gz \
   --simple-table figshare/inputs/plotting_inputs/tahoe/fig2b_absolute_expression/simple_mean_baseline_condition_metrics.csv.gz \
   --expected-summary figshare/inputs/plotting_inputs/tahoe/main_figure2/Fig2C_condition_benchmark_boxplot_v5_summary.csv \
   --outdir figshare/derived/validation/fig2b_absolute_expression
 ```
 
-The historical filename says `Fig2C`; the final manuscript places this
-component in Fig. 2b.
+The historical source filename contains `Fig2C`; the final manuscript places
+this component in Fig. 2b.
 
 ## Recreate Supplementary Fig. S3e-h
 
-The compact fitting/validation histories document model-specific selection for MLP, random forest, CPA and chemCPA. The loss scales are not compared across models.
-
 ```bash
-python github/benchmarks/tahoe_random_split/plotting/create_suppfig_s3_selection_diagnostics.py \
+python plotting/create_suppfig_s3_selection_diagnostics.py \
   --source-dir figshare/inputs/plotting_inputs/tahoe/suppfig_s3_selection_diagnostics \
   --output-dir figshare/derived/validation/suppfig_s3_selection_diagnostics
 ```
 
+These panels document model-specific selection. Their numerical loss scales
+are not compared across models.
+
 ## Verify result lineage
 
 ```bash
-python github/benchmarks/tahoe_random_split/plotting/verify_result_lineage.py \
+python plotting/verify_result_lineage.py \
   --learned-table figshare/inputs/plotting_inputs/tahoe/fig2b_absolute_expression/learned_methods_condition_metrics.csv.gz \
   --baseline-raw figshare/inputs/plotting_inputs/tahoe/fig2b_absolute_expression/baseline_raw_per_condition.csv.gz \
   --cpa-json figshare/inputs/plotting_inputs/tahoe/fig2b_absolute_expression/cpa_merged_metrics_by_condition.json.gz \
+  --cell-line-map figshare/inputs/plotting_inputs/tahoe/fig2b_absolute_expression/cellline2name.json \
   --output figshare/derived/validation/fig2b_absolute_expression/result_lineage_validation.json
 ```
 
-The RF/MLP chain and CPA condition metrics are verified. End-to-end model
-regeneration still requires external prepared Tahoe inputs and checkpoint
-objects. The active chemCPA checkpoint and its completed run lineage have been
-verified and frozen in the private reproducibility archive, but the checkpoint
-is not distributed in this public package and the exact solved runtime
-environment remains an external provenance boundary.
+The active result tables contain 13,942 rows for each reported method. The
+lineage check compares 27,884 final MLP/RF rows and 13,942 final CPA rows
+condition by condition. Full end-to-end regeneration additionally requires the external prepared Tahoe
+objects and recorded model checkpoints.

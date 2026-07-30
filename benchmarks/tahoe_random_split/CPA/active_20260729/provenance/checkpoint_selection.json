@@ -1,0 +1,21 @@
+{
+  "best_epoch_one_based": 4,
+  "best_epoch_zero_based": 3,
+  "best_metric": 2.545611257606935,
+  "completed_epoch_checkpoint_count": 8,
+  "completed_epochs": 8,
+  "early_stopping_best_score": 2.545611257606935,
+  "early_stopping_enabled": true,
+  "early_stopping_min_delta": 0.0001,
+  "early_stopping_mode": "max",
+  "early_stopping_monitor": "cpa_metric",
+  "early_stopping_patience": 4,
+  "early_stopping_stopped_epoch_zero_based": 7,
+  "early_stopping_wait_count": 4,
+  "max_epochs": 20,
+  "selected_best_checkpoint": "external_checkpoints/cpa/selected_best_epoch03_cpa2.545611.ckpt",
+  "selection_metric": "cpa_metric",
+  "selection_mode": "max",
+  "source_checkpoint": "external_checkpoints/cpa/epoch03.ckpt",
+  "stopped_early": true
+}

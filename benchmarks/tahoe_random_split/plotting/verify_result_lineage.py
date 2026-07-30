@@ -21,8 +21,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--learned-table", type=Path, required=True)
     parser.add_argument("--baseline-raw", type=Path, required=True)
     parser.add_argument("--cpa-json", type=Path, required=True)
+    parser.add_argument("--cell-line-map", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
+
+
+def map_cell_line(value: object, mapping: dict[str, str]) -> str:
+    text = str(value).strip()
+    key = text.replace("-", "_", 1) if text.startswith("CVCL-") else text
+    return mapping.get(key, text)
 
 
 def normalize_cell_line(value: object) -> str:
@@ -39,7 +46,7 @@ def normalize_dose(value: object) -> str:
 
 
 def normalize_drug(value: object) -> str:
-    return re.sub(r"\s+", " ", str(value).strip())
+    return re.sub(r"\s+", " ", str(value).strip()).replace("_", "-")
 
 
 def add_key(frame: pd.DataFrame) -> pd.DataFrame:
@@ -83,17 +90,26 @@ def compare(source: pd.DataFrame, released: pd.DataFrame,
     }
 
 
-def load_baseline(path: Path) -> pd.DataFrame:
+def load_baseline(path: Path, mapping: dict[str, str]) -> pd.DataFrame:
     raw = pd.read_csv(path)
-    split = raw["CondID"].str.split("___", n=2, expand=True)
-    if split.shape[1] != 3:
-        raise ValueError("Baseline CondID is not drug___dose___cell-line")
-    raw[["drug", "dose", "cellname"]] = split
-    raw["method"] = raw["Model"].replace({"TrivialZero": "TrivalZero"})
+    if {"condition_id", "drug", "dose", "cell_line", "method"}.issubset(raw.columns):
+        raw = raw.rename(columns={"cell_line": "cellname"})
+    elif {"CondID", "Model"}.issubset(raw.columns):
+        split = raw["CondID"].str.split("___", n=2, expand=True)
+        if split.shape[1] != 3:
+            raise ValueError("Baseline CondID is not drug___dose___cell-line")
+        raw[["drug", "dose", "cellname"]] = split
+        raw["method"] = raw["Model"].replace({"TrivialZero": "TrivalZero"})
+    else:
+        raise ValueError(
+            "Baseline table must use either the strict-OOD condition schema "
+            "or the historical CondID/Model schema"
+        )
+    raw["cellname"] = raw["cellname"].map(lambda value: map_cell_line(value, mapping))
     return add_key(raw)
 
 
-def load_cpa(path: Path) -> pd.DataFrame:
+def load_cpa(path: Path, mapping: dict[str, str]) -> pd.DataFrame:
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rt") as handle:
         payload = json.load(handle)
@@ -112,15 +128,22 @@ def load_cpa(path: Path) -> pd.DataFrame:
             "Pearson_r": metrics["pearson_r"],
             "Spearman_r": metrics["spearman_r"],
         })
-    return add_key(pd.DataFrame(rows))
+    frame = pd.DataFrame(rows)
+    frame["cellname"] = frame["cellname"].map(lambda value: map_cell_line(value, mapping))
+    return add_key(frame)
 
 
 def main() -> None:
     args = parse_args()
     learned = add_key(pd.read_csv(args.learned_table, low_memory=False))
+    mapping = json.loads(args.cell_line_map.read_text())
 
-    baseline_raw = load_baseline(args.baseline_raw)
-    baseline_methods = {"MLP", "RF", "TrivalZero"}
+    baseline_raw = load_baseline(args.baseline_raw, mapping)
+    baseline_methods = set(baseline_raw["method"]).intersection(
+        set(learned["method_raw"])
+    )
+    if not {"MLP", "RF"}.issubset(baseline_methods):
+        raise ValueError("Strict-OOD baseline table must contain MLP and RF")
     baseline_released = learned.loc[learned["method_raw"].isin(baseline_methods)].copy()
     baseline = compare(
         baseline_raw.loc[baseline_raw["method"].isin(baseline_methods)],
@@ -129,7 +152,7 @@ def main() -> None:
         "method_raw",
     )
 
-    cpa_raw = load_cpa(args.cpa_json)
+    cpa_raw = load_cpa(args.cpa_json, mapping)
     cpa_released = learned.loc[learned["method_raw"].eq("CPA")].copy()
     cpa = compare(cpa_raw, cpa_released, "method", "method_raw")
     report = {

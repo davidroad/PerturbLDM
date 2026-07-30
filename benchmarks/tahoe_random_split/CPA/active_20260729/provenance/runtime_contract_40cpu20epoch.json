@@ -1,0 +1,17 @@
+{
+  "best_checkpoint_metric": "cpa_metric",
+  "best_checkpoint_mode": "max",
+  "checkpoint_every_epoch": true,
+  "cpu_affinity_expected": "40 unique physical cores; see provenance/cpa_cpu_affinity_40physicalcores.txt",
+  "early_stopping": true,
+  "early_stopping_min_delta": 0.0001,
+  "early_stopping_mode": "max",
+  "early_stopping_monitor": "cpa_metric",
+  "early_stopping_patience": 4,
+  "external_test_role": "OOD only",
+  "interop_threads": 16,
+  "intraop_threads": 40,
+  "max_epochs": 20,
+  "run_root": ".",
+  "validation_every_n_epoch": 1
+}

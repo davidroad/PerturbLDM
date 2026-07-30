@@ -1,0 +1,22 @@
+{
+  "split_seed": 42,
+  "validation_fraction_of_official_train_conditions": 0.1,
+  "condition_definition": "cell_line_drug_dose_str",
+  "original_cell_counts": {
+    "train": 16264500,
+    "test": 6971000,
+    "ctrl": 23500
+  },
+  "cpa_cell_counts": {
+    "train": 14662000,
+    "ood": 6971000,
+    "valid": 1626000
+  },
+  "official_train_condition_count": 32529,
+  "internal_train_condition_count": 29277,
+  "validation_condition_count": 3252,
+  "external_ood_condition_count": 13942,
+  "control_cell_count": 23500,
+  "train_validation_condition_overlap": 0,
+  "official_train_external_ood_condition_overlap": 0
+}

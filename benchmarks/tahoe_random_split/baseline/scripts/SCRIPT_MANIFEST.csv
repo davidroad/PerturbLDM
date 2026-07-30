@@ -1,2 +1,13 @@
-type,category,path,size_bytes
-script,training,scripts/training/baseline_RF_MLP_random_control_mean_final_10-5_trivial_test_final_save_expression.py,37724
+status,category,path,role
+active,cache,active_20260729/scripts/build_condition_cache.py,stream prepared H5AD objects into condition-level means
+active,shared,active_20260729/scripts/baseline_common.py,shared validation-safe feature and metric utilities
+active,mlp,active_20260729/scripts/run_mlp_search.py,MLP training and checkpoint implementation
+active,mlp,active_20260729/scripts/run_mlp_full_data_lr_dropout_grid_remaining.py,full fitting-set learning-rate comparison
+active,mlp,active_20260729/scripts/run_mlp_full_train_dropout_sensitivity.py,full fitting-set dropout 0.1 and 0.2 comparison
+active,mlp,active_20260729/scripts/run_mlp_full_train_dropout_0p3_extension.py,full fitting-set dropout 0.3 comparison and combined table
+active,mlp,active_20260729/scripts/finalize_mlp_full_data_selection.py,freeze active MLP setting and checkpoint record
+active,rf,active_20260729/scripts/run_rf_search.py,random-forest training helpers
+active,rf,active_20260729/scripts/run_rf_full_data_validation_search.py,full fitting-set minimum-leaf comparison
+active,rf,active_20260729/scripts/finalize_rf_full_data_selection.py,freeze active random-forest model record
+active,evaluation,active_20260729/scripts/run_mlp_rf_ood_inference.py,gated 13942-condition external-test inference and metrics
+legacy,training,scripts/training/baseline_RF_MLP_random_control_mean_final_10-5_trivial_test_final_save_expression.py,historical pre-refresh implementation not used for active Fig. 2b values

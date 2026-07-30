@@ -729,7 +729,7 @@ def build_validation_markdown(summary, effect_counts, dist_counts, cross_module_
     add_check("Hallmark score MAE PerturbLDM-better fraction", program_mae["perturbldm_better_fraction"], 0.8705, 4)
 
     for baseline, mmd_mean, ot_mean in [
-        ("CPA", 0.2265, 59.492),
+        ("CPA", 0.2426, 60.262),
         ("chemCPA", 0.2197, 59.434),
     ]:
         mmd = summary_row(summary, "distribution_fidelity", "MMD_RBF", baseline)

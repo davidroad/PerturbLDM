@@ -2,7 +2,9 @@
 
 This folder contains the Tahoe-specific entry points for the PerturbLDM cell-line/drug/dose response reconstruction experiment.
 
-Run these scripts from the PerturbLDM release root, or use the shell wrappers in this folder. The `--data_root` argument should point directly to one processed Tahoe split folder containing `collection/` and `processed/`.
+Run these scripts from the PerturbLDM release root, or use the configurable
+shell wrappers in this folder. The `--data_root` argument should point directly
+to one processed Tahoe split folder containing `collection/` and `processed/`.
 
 Typical order:
 
@@ -40,9 +42,11 @@ test-set information when estimating marginal means:
 - `DrugDoseMean`: mean of training perturbation-condition means from the same drug-dose pair.
 - `AdditiveMean`: `CellLineMean + DrugDoseMean - GlobalMean`, using training-split marginals.
 
-The shell wrappers are convenience examples. Set `DATA_DIR` before running
+The shell wrappers are execution templates rather than archived records of a
+particular fitted checkpoint. Set `DATA_DIR` before running
 `train_latent.sh`, and set both `DATA_DIR` and `LATENT_DIR` before running
-`train_diffusion.sh`.
+`train_diffusion.sh`. Saved run configurations and checkpoint metadata should
+be retained alongside outputs when adapting these templates.
 
 `run_diff_inference.py` reads held-out condition names from `test_metadf.csv`.
 Use `--save_latent_steps` only when reverse-diffusion trajectory snapshots are

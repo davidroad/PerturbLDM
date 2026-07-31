@@ -1,6 +1,7 @@
 # PerturbLDM core code
 
-This directory contains a manuscript-facing release snapshot of the core PerturbLDM implementation used for latent VAE training, conditional latent diffusion training, and inference.
+This directory contains the core PerturbLDM implementation for latent VAE
+training, conditional latent diffusion training and inference.
 
 ## Scope
 
@@ -10,10 +11,16 @@ Included:
 - Conditional denoising MLP architecture and diffusion training utilities.
 - Tahoe cell-line/drug/dose latent reconstruction, diffusion inference, and metric utilities.
 - Example scripts for PBMC and colon-development transfer experiments.
+- A post-install PBMC training test that exercises preprocessing, model fitting,
+  generation, metrics, figures and checkpoint writing.
 
 Not included:
 
 - Raw single-cell data, processed atlas folders, checkpoints, exploratory plots, deprecated metrics, or internal analysis outputs.
+
+These external inputs and large generated objects must be staged separately.
+The paired Figshare deposit provides compact manuscript source tables rather
+than raw atlases or full per-cell prediction objects.
 
 ## Files
 
@@ -135,9 +142,23 @@ python -u examples/exp_pbmc_ifn.py \
   --topgenenum 2000 --subtype mse --cuda_id 0
 ```
 
+For a compact post-install test using the same response-transfer split:
+
+```bash
+python -m PerturbLDM.examples.test_pbmc_training \
+  --input /path/to/pbmc_IFN_filtered.h5ad \
+  --output-dir outputs/pbmc_example \
+  --device cpu
+```
+
+The compact test uses manuscript-aligned `v_prediction` but deliberately
+smaller models and fewer features; it validates installation and execution and
+does not reproduce the manuscript benchmark.
+
 ## Notes
 
 - PerturbLDM uses a VAE to reconstruct expression profiles in latent space and a conditional diffusion model to generate latent responses from conditions.
 - The diffusion scripts support `v_prediction`, `epsilon`, and `sample` prediction types through `--prediction_type`.
-- The code snapshot supports method inspection and reproduction with the datasets cited in the manuscript.
+- The code supports method inspection and rerunning the documented workflows
+  when their cited external datasets and required fitted artifacts are staged.
 - All command examples use repository-relative paths. Raw or processed H5ADs, checkpoints and latent tensors are staged outside the repository.

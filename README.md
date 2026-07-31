@@ -59,29 +59,36 @@ env -u LD_LIBRARY_PATH perturbldm-pbmc-smoke \
   --device cpu
 ```
 
-## PBMC installation smoke test
+## Five-minute PBMC diffusion example
 
-The installed command below runs a small CPU-safe end-to-end check on the real
-Kang et al. PBMC object:
+The installed command below runs a standalone CPU-safe end-to-end example on
+the Kang et al. PBMC object. It is designed to complete within five minutes on
+a conventional CPU; actual time depends on hardware.
 
 ```bash
-perturbldm-pbmc-smoke \
+perturbldm-pbmc-example \
   --input /path/to/pbmc_IFN_filtered.h5ad \
-  --output-dir outputs/pbmc_smoke \
+  --output-dir outputs/pbmc_example \
   --device cpu
 ```
 
 The command validates the required `cell.type` and `stim` metadata, applies the
-documented hold-out of IFN-beta-stimulated B cells, CD8 T cells and FCGR3A+
-monocytes, fits reduced latent and conditional-diffusion models, generates the
-held-out states and writes `pbmc_smoke_summary.json`. The summary includes
-shape and finite-value checks plus diagnostic whole-state and
-matched-control-relative metrics.
+response-transfer hold-out of IFN-beta-stimulated B cells, CD8 T cells and
+FCGR3A+ monocytes, fits compact latent and conditional-diffusion models and
+generates the held-out states. It writes `pbmc_example_summary.json`,
+`training_losses.png` and `prediction_diagnostics.png`. The summary includes
+shape and finite-value checks plus diagnostic whole-state and matched-control-
+relative metrics.
 
-This is an installation and execution test, not a reproduction of the
-manuscript result: it uses 128 training-selected HVGs, a stratified cell
-subsample and two short optimization epochs by default. The full experiment
-uses the frozen settings under `PerturbLDM/configs/pbmc_active_run/`.
+This is a self-contained teaching and execution example, not manuscript
+reproduction or benchmark evidence. Its fixed defaults use all available cells
+after the response-transfer split (11,842 fitting and 1,710 held-out cells in
+the supplied object), 1,000 training-selected HVGs, a 64-dimensional latent
+space, 40 latent-model epochs, 160 diffusion epochs and 50 inference steps. It
+does not run hyperparameter search or cross-validation. The verified default
+run completed in 116 seconds with 1.84 GB peak memory on the reference CPU
+server; runtime varies with hardware. The legacy `perturbldm-pbmc-smoke`
+command is retained as an alias.
 
 ## Full PBMC example
 

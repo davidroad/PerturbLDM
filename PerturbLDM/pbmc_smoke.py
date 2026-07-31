@@ -1,9 +1,9 @@
-"""CPU-safe end-to-end smoke test on the Kang et al. PBMC dataset.
+"""CPU-safe end-to-end diffusion example on the Kang et al. PBMC dataset.
 
-This command validates installation, preprocessing, the manuscript hold-out
-rule, latent-model optimization, conditional diffusion optimization and
-generation. Its deliberately reduced feature and cell counts are not intended
-to reproduce the manuscript benchmark.
+This standalone example validates installation, preprocessing, a biologically
+structured response-transfer split, latent-model optimization, conditional
+diffusion optimization and generation. Its deliberately reduced feature and
+cell counts are not intended to reproduce manuscript results.
 """
 
 from __future__ import annotations
@@ -39,20 +39,25 @@ REQUIRED_OBS_COLUMNS = ("cell.type", "stim")
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run a small end-to-end PerturbLDM test on a PBMC H5AD."
+        description="Run a five-minute end-to-end PerturbLDM example on a PBMC H5AD."
     )
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--device", choices=("cpu", "cuda", "auto"), default="cpu")
     parser.add_argument("--seed", type=int, default=17)
-    parser.add_argument("--genes", type=int, default=128)
-    parser.add_argument("--cells-per-condition", type=int, default=32)
-    parser.add_argument("--latent-dim", type=int, default=16)
-    parser.add_argument("--vae-epochs", type=int, default=2)
-    parser.add_argument("--diffusion-epochs", type=int, default=2)
-    parser.add_argument("--inference-steps", type=int, default=10)
-    parser.add_argument("--batch-size", type=int, default=64)
-    parser.add_argument("--threads", type=int, default=2)
+    parser.add_argument("--genes", type=int, default=1000)
+    parser.add_argument(
+        "--cells-per-condition",
+        type=int,
+        default=0,
+        help="Maximum cells per condition; 0 uses all available cells",
+    )
+    parser.add_argument("--latent-dim", type=int, default=64)
+    parser.add_argument("--vae-epochs", type=int, default=40)
+    parser.add_argument("--diffusion-epochs", type=int, default=160)
+    parser.add_argument("--inference-steps", type=int, default=50)
+    parser.add_argument("--batch-size", type=int, default=256)
+    parser.add_argument("--threads", type=int, default=4)
     return parser.parse_args()
 
 
@@ -113,6 +118,96 @@ def safe_pearson(left: np.ndarray, right: np.ndarray) -> float | None:
         return None
     value = float(np.corrcoef(left, right)[0, 1])
     return value if math.isfinite(value) else None
+
+
+def write_diagnostic_plots(
+    output_dir: Path,
+    *,
+    vae_history: list[float],
+    diffusion_history: list[float],
+    condition_arrays: dict[str, dict[str, np.ndarray]],
+) -> dict[str, str]:
+    """Write example-only training and prediction diagnostics."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    loss_path = output_dir / "training_losses.png"
+    fig, axes = plt.subplots(1, 2, figsize=(8.0, 3.2), constrained_layout=True)
+    axes[0].plot(
+        np.arange(1, len(vae_history) + 1),
+        vae_history,
+        color="#2878B5",
+        linewidth=1.8,
+    )
+    axes[0].set(title="Latent model", xlabel="Epoch", ylabel="Training objective")
+    axes[1].plot(
+        np.arange(1, len(diffusion_history) + 1),
+        diffusion_history,
+        color="#C82423",
+        linewidth=1.8,
+    )
+    axes[1].set(
+        title="Conditional diffusion",
+        xlabel="Epoch",
+        ylabel="Noise-prediction MSE",
+    )
+    for axis in axes:
+        axis.spines[["top", "right"]].set_visible(False)
+        axis.grid(alpha=0.18, linewidth=0.6)
+    fig.suptitle("Standalone PBMC example: training diagnostics", fontsize=11)
+    fig.savefig(loss_path, dpi=180, bbox_inches="tight")
+    plt.close(fig)
+
+    prediction_path = output_dir / "prediction_diagnostics.png"
+    cell_types = list(condition_arrays)
+    fig, axes = plt.subplots(
+        2,
+        len(cell_types),
+        figsize=(3.25 * len(cell_types), 6.0),
+        constrained_layout=True,
+        squeeze=False,
+    )
+    for column, cell_type in enumerate(cell_types):
+        values = condition_arrays[cell_type]
+        pairs = (
+            (values["observed_mean"], values["predicted_mean"], "Whole state"),
+            (
+                values["observed_effect"],
+                values["predicted_effect"],
+                "Matched-control effect",
+            ),
+        )
+        for row, (observed, predicted, label) in enumerate(pairs):
+            axis = axes[row, column]
+            axis.scatter(observed, predicted, s=6, alpha=0.35, color="#2878B5")
+            lower = float(min(observed.min(), predicted.min()))
+            upper = float(max(observed.max(), predicted.max()))
+            if lower == upper:
+                upper = lower + 1.0
+            axis.plot(
+                [lower, upper],
+                [lower, upper],
+                "--",
+                color="0.35",
+                linewidth=1,
+            )
+            correlation = safe_pearson(observed, predicted)
+            correlation_text = "NA" if correlation is None else f"{correlation:.3f}"
+            axis.set_title(f"{cell_type}\n{label}; r={correlation_text}", fontsize=9)
+            axis.set_xlabel("Observed")
+            axis.set_ylabel("Predicted")
+            axis.spines[["top", "right"]].set_visible(False)
+            axis.grid(alpha=0.14, linewidth=0.5)
+    fig.suptitle("Standalone PBMC example: condition-mean diagnostics", fontsize=11)
+    fig.savefig(prediction_path, dpi=180, bbox_inches="tight")
+    plt.close(fig)
+
+    return {
+        "training_losses": loss_path.name,
+        "prediction_diagnostics": prediction_path.name,
+    }
 
 
 def train_latent_model(
@@ -278,7 +373,6 @@ def main() -> int:
         raise FileNotFoundError(f"PBMC input does not exist: {input_path}")
     if min(
         args.genes,
-        args.cells_per_condition,
         args.latent_dim,
         args.vae_epochs,
         args.diffusion_epochs,
@@ -286,7 +380,9 @@ def main() -> int:
         args.batch_size,
         args.threads,
     ) < 1:
-        raise ValueError("All numeric smoke-test settings must be positive")
+        raise ValueError("Model, optimization and resource settings must be positive")
+    if args.cells_per_condition < 0:
+        raise ValueError("--cells-per-condition must be zero or positive")
 
     # 1. Validate the input contract and reproduce the biological hold-out.
     # Only the stimulated states are hidden; controls from the same cell types
@@ -326,22 +422,28 @@ def main() -> int:
                 f"PBMC split lacks control or held-out cells for {cell_type}"
             )
 
-    # 2. Keep a small, condition-stratified subset so this remains a CPU-safe
-    # installation test. Use examples/exp_pbmc_ifn.py for the full experiment.
-    train_indices = stratified_sample_indices(
-        train_full.obs,
-        group_columns=("cell.type", "stim"),
-        maximum=args.cells_per_condition,
-        seed=args.seed,
-    )
-    test_indices = stratified_sample_indices(
-        test_full.obs,
-        group_columns=("cell.type",),
-        maximum=args.cells_per_condition,
-        seed=args.seed + 1,
-    )
-    train = train_full[train_indices].copy()
-    test = test_full[test_indices].copy()
+    # 2. Keep a condition-stratified subset so the complete example remains
+    # CPU-safe and comfortably below its five-minute runtime target.
+    if args.cells_per_condition == 0:
+        train = train_full
+        test = test_full
+        sampling_rule = "all_available_cells"
+    else:
+        train_indices = stratified_sample_indices(
+            train_full.obs,
+            group_columns=("cell.type", "stim"),
+            maximum=args.cells_per_condition,
+            seed=args.seed,
+        )
+        test_indices = stratified_sample_indices(
+            test_full.obs,
+            group_columns=("cell.type",),
+            maximum=args.cells_per_condition,
+            seed=args.seed + 1,
+        )
+        train = train_full[train_indices].copy()
+        test = test_full[test_indices].copy()
+        sampling_rule = f"up_to_{args.cells_per_condition}_cells_per_condition"
 
     # 3. Select features from the sampled training cells only, then preserve
     # exactly the same gene order in the held-out cells.
@@ -384,7 +486,8 @@ def main() -> int:
     )
 
     # 4. Compress expression first, then learn p(z | cell type, stimulation)
-    # with the conditional denoiser. These defaults are intentionally tiny.
+    # with the conditional denoiser. The defaults are deliberately compact,
+    # but long enough to produce interpretable training-loss trajectories.
     latent_model, vae_history, train_latents = train_latent_model(
         train_x,
         latent_dim=args.latent_dim,
@@ -419,6 +522,7 @@ def main() -> int:
     # 6. Report both whole-state agreement and response relative to the matched
     # control mean; the latter prevents background expression from dominating.
     metrics: dict[str, dict[str, float | None]] = {}
+    condition_arrays: dict[str, dict[str, np.ndarray]] = {}
     train_cell_type = train.obs["cell.type"].astype(str).to_numpy()
     train_stim = train.obs["stim"].astype(str).to_numpy()
     test_cell_type = test.obs["cell.type"].astype(str).to_numpy()
@@ -428,6 +532,12 @@ def main() -> int:
         observed_mean = test_x[test_mask].mean(axis=0)
         predicted_mean = predicted[test_mask].mean(axis=0)
         control_mean = train_x[control_mask].mean(axis=0)
+        condition_arrays[cell_type] = {
+            "observed_mean": observed_mean,
+            "predicted_mean": predicted_mean,
+            "observed_effect": observed_mean - control_mean,
+            "predicted_effect": predicted_mean - control_mean,
+        }
         metrics[cell_type] = {
             "absolute_profile_pearson": safe_pearson(
                 observed_mean, predicted_mean
@@ -456,9 +566,18 @@ def main() -> int:
         and all(math.isfinite(value) for value in vae_history)
         and all(math.isfinite(value) for value in diffusion_history)
     )
+    plot_files = write_diagnostic_plots(
+        output_dir,
+        vae_history=vae_history,
+        diffusion_history=diffusion_history,
+        condition_arrays=condition_arrays,
+    )
     summary = {
         "status": "PASS" if passed else "FAIL",
-        "purpose": "installation_and_execution_smoke_test_not_manuscript_reproduction",
+        "purpose": "standalone_five_minute_pbmc_diffusion_example",
+        "interpretation_boundary": (
+            "diagnostic example only; not manuscript reproduction or benchmark evidence"
+        ),
         "input": {
             "name": input_path.name,
             "sha256": file_sha256(input_path),
@@ -473,9 +592,10 @@ def main() -> int:
             },
             "full_train_cells": int(train_full.n_obs),
             "full_test_cells": int(test_full.n_obs),
-            "smoke_train_cells": int(train.n_obs),
-            "smoke_test_cells": int(test.n_obs),
-            "smoke_test_by_cell_type": {
+            "example_sampling": sampling_rule,
+            "example_train_cells": int(train.n_obs),
+            "example_test_cells": int(test.n_obs),
+            "example_test_by_cell_type": {
                 name: int((test.obs["cell.type"] == name).sum())
                 for name in HELD_OUT_CELL_TYPES
             },
@@ -502,15 +622,17 @@ def main() -> int:
             "finite_fraction": finite_fraction,
         },
         "diagnostic_metrics": metrics,
+        "diagnostic_plots": plot_files,
         "resources": {
             "threads": args.threads,
+            "runtime_target_seconds": 300,
             "peak_rss_mb": round(
                 resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 3
             ),
         },
         "elapsed_seconds": round(time.time() - started, 3),
     }
-    output_path = output_dir / "pbmc_smoke_summary.json"
+    output_path = output_dir / "pbmc_example_summary.json"
     output_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(summary, indent=2))
     print(f"Summary written to {output_path}")

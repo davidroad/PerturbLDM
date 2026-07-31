@@ -21,6 +21,7 @@ dependencies = [
 pbmc = [
   "anndata>=0.9",
   "diffusers>=0.24",
+  "matplotlib>=3.7",
   "pandas>=1.5",
   "scanpy>=1.9",
   "scipy>=1.10"
@@ -39,6 +40,7 @@ full = [
 
 [project.scripts]
 perturbldm-pbmc-smoke = "PerturbLDM.pbmc_smoke:main"
+perturbldm-pbmc-example = "PerturbLDM.pbmc_smoke:main"
 
 [tool.setuptools]
 include-package-data = true

@@ -44,10 +44,6 @@ The explicit PyTorch command installs the CPU wheel used by the PBMC example.
 GPU users should instead install the PyTorch build matching their CUDA runtime
 before installing PerturbLDM.
 
-While the repository is private, the installing machine must have authenticated
-GitHub access. For example, `gh auth login` followed by `gh auth setup-git`
-configures Git credentials for command-line installation.
-
 Some managed clusters export another environment's PyTorch libraries through
 `LD_LIBRARY_PATH`. If `import torch` reports a missing C-extension symbol even
 though `pip check` passes, verify the isolated environment without that inherited

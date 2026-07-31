@@ -27,14 +27,37 @@ PerturbLDM directly from GitHub:
 python3.10 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
+python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
 python -m pip install \
   "perturbldm[pbmc] @ git+https://github.com/davidroad/PerturbLDM.git"
 python -c "import PerturbLDM; print(PerturbLDM.__file__)"
 ```
 
+The explicit PyTorch command installs the CPU wheel used by the smoke test.
+GPU users should instead install the PyTorch build matching their CUDA runtime
+before installing PerturbLDM.
+
 While the repository is private, the installing machine must have authenticated
 GitHub access. For example, `gh auth login` followed by `gh auth setup-git`
 configures Git credentials for command-line installation.
+
+Some managed clusters export another environment's PyTorch libraries through
+`LD_LIBRARY_PATH`. If `import torch` reports a missing C-extension symbol even
+though `pip check` passes, verify the isolated environment without that inherited
+path:
+
+```bash
+env -u LD_LIBRARY_PATH python -c "import torch; print(torch.__version__)"
+```
+
+Use the same prefix for the smoke test on such a cluster:
+
+```bash
+env -u LD_LIBRARY_PATH perturbldm-pbmc-smoke \
+  --input /path/to/pbmc_IFN_filtered.h5ad \
+  --output-dir outputs/pbmc_smoke \
+  --device cpu
+```
 
 ## PBMC installation smoke test
 

@@ -1,0 +1,9 @@
+priority	cell_type	stim	split_rule	rationale
+1	Megakaryocytes	*	exclude	low-coverage cell type exclusion
+2	B cells	stim	held_out	unmeasured stimulated lymphoid target
+2	CD8 T cells	stim	held_out	unmeasured stimulated lymphoid target
+2	FCGR3A+ Monocytes	stim	held_out	unmeasured stimulated myeloid target
+3	B cells	ctrl	fit	observed target-cell background retained
+3	CD8 T cells	ctrl	fit	observed target-cell background retained
+3	FCGR3A+ Monocytes	ctrl	fit	observed target-cell background retained
+4	*	*	fit	all remaining measured combinations

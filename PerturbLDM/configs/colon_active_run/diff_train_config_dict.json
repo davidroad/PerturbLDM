@@ -1,0 +1,8 @@
+{
+    "batchsize": 256,
+    "num_epochs": 1200,
+    "lr": 0.00015,
+    "clip_sample_range": 5.3915510177612305,
+    "weight_decay": 0.0003,
+    "prediction_type": "v_prediction"
+}

@@ -1,0 +1,22 @@
+{
+    "lr": 0.0001,
+    "max_steps": 20000,
+    "batchsize": 256,
+    "latent_dim": 128,
+    "input_dim": 2000,
+    "kl_weight": 0.0002,
+    "dropout": 0.2,
+    "use_variational": true,
+    "hidden_dim": 256,
+    "dec_hidden": 768,
+    "hidden_dim_en": [
+        768
+    ],
+    "hidden_dim_de": [
+        256
+    ],
+    "weight_decay": 0.0003,
+    "use_dec_logvar": false,
+    "recon_loss_type": "mse",
+    "distribution_type": "gauss"
+}

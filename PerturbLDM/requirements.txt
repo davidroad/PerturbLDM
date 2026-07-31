@@ -1,0 +1,11 @@
+anndata
+diffusers
+matplotlib
+numpy
+pandas
+scanpy
+scikit-learn
+scipy
+torch
+tqdm
+umap-learn

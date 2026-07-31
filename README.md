@@ -18,7 +18,49 @@ Code accompanying **PerturbLDM: conditional latent diffusion for modelling singl
 - `benchmarks/tahoe_random_split/`: MLP, random-forest, CPA and chemCPA benchmark code plus figure wrappers.
 - `docs/figures/`: the manuscript overview figure in PDF and README-preview formats.
 
-## PBMC example
+## Installation
+
+Python 3.10 or 3.11 is recommended. Create an isolated environment and install
+PerturbLDM directly from GitHub:
+
+```bash
+python3.10 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install \
+  "perturbldm[pbmc] @ git+https://github.com/davidroad/PerturbLDM.git"
+python -c "import PerturbLDM; print(PerturbLDM.__file__)"
+```
+
+While the repository is private, the installing machine must have authenticated
+GitHub access. For example, `gh auth login` followed by `gh auth setup-git`
+configures Git credentials for command-line installation.
+
+## PBMC installation smoke test
+
+The installed command below runs a small CPU-safe end-to-end check on the real
+Kang et al. PBMC object:
+
+```bash
+perturbldm-pbmc-smoke \
+  --input /path/to/pbmc_IFN_filtered.h5ad \
+  --output-dir outputs/pbmc_smoke \
+  --device cpu
+```
+
+The command validates the required `cell.type` and `stim` metadata, applies the
+documented hold-out of IFN-beta-stimulated B cells, CD8 T cells and FCGR3A+
+monocytes, fits reduced latent and conditional-diffusion models, generates the
+held-out states and writes `pbmc_smoke_summary.json`. The summary includes
+shape and finite-value checks plus diagnostic whole-state and
+matched-control-relative metrics.
+
+This is an installation and execution test, not a reproduction of the
+manuscript result: it uses 128 training-selected HVGs, a stratified cell
+subsample and two short optimization epochs by default. The full experiment
+uses the frozen settings under `PerturbLDM/configs/pbmc_active_run/`.
+
+## Full PBMC example
 
 Stage the processed GSE96583-derived object under the documented relative path, then run the experiment:
 

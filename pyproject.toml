@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "perturbldm"
+version = "0.1.0"
+description = "Conditional latent diffusion for modelling single-cell perturbation responses"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+  {name = "PerturbLDM authors"}
+]
+dependencies = [
+  "numpy>=1.23",
+  "torch>=2.0"
+]
+
+[project.optional-dependencies]
+pbmc = [
+  "anndata>=0.9",
+  "diffusers>=0.24",
+  "pandas>=1.5",
+  "scanpy>=1.9",
+  "scipy>=1.10"
+]
+full = [
+  "anndata>=0.9",
+  "diffusers>=0.24",
+  "matplotlib>=3.7",
+  "pandas>=1.5",
+  "scanpy>=1.9",
+  "scikit-learn>=1.2",
+  "scipy>=1.10",
+  "tqdm>=4.65",
+  "umap-learn>=0.5"
+]
+
+[project.scripts]
+perturbldm-pbmc-smoke = "PerturbLDM.pbmc_smoke:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["PerturbLDM*"]
+
+[tool.setuptools.package-data]
+PerturbLDM = [
+  "configs/**/*.json",
+  "examples/**/*.md",
+  "examples/**/*.py",
+  "examples/**/*.sh",
+  "examples/**/*.tsv"
+]

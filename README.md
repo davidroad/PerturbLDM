@@ -76,9 +76,11 @@ The command validates the required `cell.type` and `stim` metadata, applies the
 response-transfer hold-out of IFN-beta-stimulated B cells, CD8 T cells and
 FCGR3A+ monocytes, fits compact latent and conditional-diffusion models and
 generates the held-out states. It writes `pbmc_example_summary.json`,
-`training_losses.png` and `prediction_diagnostics.png`. The summary includes
-shape and finite-value checks plus diagnostic whole-state and matched-control-
-relative metrics.
+`training_losses.png`, `prediction_diagnostics.png`, `training_history.csv`,
+`condition_metrics.csv`, the selected genes, cell-level held-out predictions,
+condition-mean profiles, run configuration and both model checkpoints. The
+summary indexes every artifact and includes shape and finite-value checks plus
+diagnostic whole-state and matched-control-relative metrics.
 
 This is a self-contained teaching and execution example, not manuscript
 reproduction or benchmark evidence. Its fixed defaults use all available cells

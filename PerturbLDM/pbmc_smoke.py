@@ -9,6 +9,7 @@ cell counts are not intended to reproduce manuscript results.
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import math
@@ -207,6 +208,181 @@ def write_diagnostic_plots(
     return {
         "training_losses": loss_path.name,
         "prediction_diagnostics": prediction_path.name,
+    }
+
+
+def cpu_state_dict(model: torch.nn.Module) -> dict[str, torch.Tensor]:
+    return {
+        name: value.detach().cpu()
+        for name, value in model.state_dict().items()
+    }
+
+
+def write_run_artifacts(
+    output_dir: Path,
+    *,
+    args: argparse.Namespace,
+    genes: list[str],
+    cell_to_id: dict[str, int],
+    stim_to_id: dict[str, int],
+    latent_model: CellEncoderWithLogvar,
+    denoiser: DenoisingModelConditions,
+    scheduler: DDPMScheduler,
+    vae_history: list[float],
+    diffusion_history: list[float],
+    metrics: dict[str, dict[str, float | None]],
+    condition_arrays: dict[str, dict[str, np.ndarray]],
+    predicted: np.ndarray,
+    observed: np.ndarray,
+    test_cell_type: np.ndarray,
+    test_stim: np.ndarray,
+) -> dict[str, str]:
+    """Persist every object needed to inspect or reuse one example run."""
+    history_path = output_dir / "training_history.csv"
+    with history_path.open("w", newline="", encoding="utf-8") as stream:
+        writer = csv.DictWriter(stream, fieldnames=("stage", "epoch", "loss", "value"))
+        writer.writeheader()
+        for epoch, value in enumerate(vae_history, start=1):
+            writer.writerow(
+                {
+                    "stage": "latent_model",
+                    "epoch": epoch,
+                    "loss": "training_objective",
+                    "value": value,
+                }
+            )
+        for epoch, value in enumerate(diffusion_history, start=1):
+            writer.writerow(
+                {
+                    "stage": "conditional_diffusion",
+                    "epoch": epoch,
+                    "loss": "noise_prediction_mse",
+                    "value": value,
+                }
+            )
+
+    metrics_path = output_dir / "condition_metrics.csv"
+    metric_names = (
+        "absolute_profile_pearson",
+        "absolute_profile_mae",
+        "matched_control_effect_pearson",
+        "matched_control_effect_mae",
+    )
+    with metrics_path.open("w", newline="", encoding="utf-8") as stream:
+        writer = csv.DictWriter(
+            stream,
+            fieldnames=(
+                "cell_type",
+                "evaluation_unit",
+                "effect_reference",
+                *metric_names,
+            ),
+        )
+        writer.writeheader()
+        for cell_type, values in metrics.items():
+            writer.writerow(
+                {
+                    "cell_type": cell_type,
+                    "evaluation_unit": "condition_mean_over_selected_genes",
+                    "effect_reference": "mean_ctrl_same_cell_type",
+                    **{name: values[name] for name in metric_names},
+                }
+            )
+
+    genes_path = output_dir / "selected_genes.txt"
+    genes_path.write_text("\n".join(genes) + "\n", encoding="utf-8")
+
+    condition_path = output_dir / "condition_mean_profiles.npz"
+    cell_type_order = list(condition_arrays)
+    np.savez_compressed(
+        condition_path,
+        genes=np.asarray(genes, dtype=str),
+        cell_types=np.asarray(cell_type_order, dtype=str),
+        observed_mean=np.stack(
+            [condition_arrays[name]["observed_mean"] for name in cell_type_order]
+        ),
+        predicted_mean=np.stack(
+            [condition_arrays[name]["predicted_mean"] for name in cell_type_order]
+        ),
+        observed_effect=np.stack(
+            [condition_arrays[name]["observed_effect"] for name in cell_type_order]
+        ),
+        predicted_effect=np.stack(
+            [condition_arrays[name]["predicted_effect"] for name in cell_type_order]
+        ),
+    )
+
+    predictions_path = output_dir / "heldout_predictions.npz"
+    np.savez_compressed(
+        predictions_path,
+        genes=np.asarray(genes, dtype=str),
+        cell_type=np.asarray(test_cell_type, dtype=str),
+        stim=np.asarray(test_stim, dtype=str),
+        observed_expression=observed.astype(np.float32, copy=False),
+        predicted_expression=predicted.astype(np.float32, copy=False),
+    )
+
+    latent_checkpoint = output_dir / "latent_model_state.pt"
+    denoiser_checkpoint = output_dir / "denoising_model_state.pt"
+    torch.save(cpu_state_dict(latent_model), latent_checkpoint)
+    torch.save(cpu_state_dict(denoiser), denoiser_checkpoint)
+
+    config_path = output_dir / "run_configuration.json"
+    configuration = {
+        "seed": args.seed,
+        "device": str(next(latent_model.parameters()).device),
+        "features": {
+            "selection": "training_only_hvg",
+            "count": len(genes),
+            "gene_file": genes_path.name,
+        },
+        "sampling": {
+            "cells_per_condition": args.cells_per_condition,
+            "zero_means_all_available": True,
+        },
+        "latent_model": {
+            "latent_dim": args.latent_dim,
+            "epochs": args.vae_epochs,
+            "batch_size": args.batch_size,
+            "optimizer": "AdamW",
+            "learning_rate": 1e-3,
+            "weight_decay": 1e-4,
+            "dropout": 0.1,
+            "kl_weight": 1e-4,
+            "checkpoint": latent_checkpoint.name,
+        },
+        "conditional_diffusion": {
+            "epochs": args.diffusion_epochs,
+            "batch_size": args.batch_size,
+            "optimizer": "AdamW",
+            "learning_rate": 5e-4,
+            "weight_decay": 1e-4,
+            "prediction_type": "epsilon",
+            "training_timesteps": int(scheduler.config.num_train_timesteps),
+            "inference_steps": args.inference_steps,
+            "beta_start": float(scheduler.config.beta_start),
+            "beta_end": float(scheduler.config.beta_end),
+            "checkpoint": denoiser_checkpoint.name,
+        },
+        "condition_mappings": {
+            "cell_type": cell_to_id,
+            "stim": stim_to_id,
+        },
+    }
+    config_path.write_text(
+        json.dumps(configuration, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    return {
+        "training_history": history_path.name,
+        "condition_metrics": metrics_path.name,
+        "selected_genes": genes_path.name,
+        "condition_mean_profiles": condition_path.name,
+        "heldout_predictions": predictions_path.name,
+        "latent_model_checkpoint": latent_checkpoint.name,
+        "denoising_model_checkpoint": denoiser_checkpoint.name,
+        "run_configuration": config_path.name,
     }
 
 
@@ -572,6 +748,24 @@ def main() -> int:
         diffusion_history=diffusion_history,
         condition_arrays=condition_arrays,
     )
+    artifact_files = write_run_artifacts(
+        output_dir,
+        args=args,
+        genes=genes,
+        cell_to_id=cell_to_id,
+        stim_to_id=stim_to_id,
+        latent_model=latent_model,
+        denoiser=denoiser,
+        scheduler=scheduler,
+        vae_history=vae_history,
+        diffusion_history=diffusion_history,
+        metrics=metrics,
+        condition_arrays=condition_arrays,
+        predicted=predicted,
+        observed=test_x,
+        test_cell_type=test_cell_type,
+        test_stim=test.obs["stim"].astype(str).to_numpy(),
+    )
     summary = {
         "status": "PASS" if passed else "FAIL",
         "purpose": "standalone_five_minute_pbmc_diffusion_example",
@@ -623,6 +817,11 @@ def main() -> int:
         },
         "diagnostic_metrics": metrics,
         "diagnostic_plots": plot_files,
+        "artifacts": {
+            **artifact_files,
+            **plot_files,
+            "summary": "pbmc_example_summary.json",
+        },
         "resources": {
             "threads": args.threads,
             "runtime_target_seconds": 300,

@@ -1,4 +1,16 @@
-"""Run the PBMC IFN transfer experiment with PerturbLDM."""
+"""Run the full PBMC IFN-beta response-transfer experiment.
+
+Reading guide
+-------------
+1. Preprocess the PBMC object and hide selected stimulated states.
+2. Fit the latent expression model on the remaining cells.
+3. Fit a diffusion model conditioned on ``cell.type`` and ``stim``.
+4. Generate the missing states either from noise (PerturbLDM) or from matched
+   control latents (PerturbLDM-ctrl), then decode and evaluate them.
+
+For a quick installation check, use ``perturbldm-pbmc-smoke`` instead. This
+script uses the full experiment settings and is intended for a GPU.
+"""
 
 import os
 import argparse
@@ -88,6 +100,9 @@ print(rmcells)
 adata_used = adata[~adata.obs['cell.type'].isin(rmcells)]
 print(adata_used.shape)
 adata_used.X = adata_used.X.astype(np.float32)
+# Response-transfer split: hide only the stimulated profiles of the target
+# cell types. Their control cells remain in train_adata and retain the observed
+# cell-type background needed to assess the missing IFN-beta response.
 testid = (adata_used.obs['cell.type'].isin(test_cellnames)) & (adata_used.obs['stim'] =='stim')
 print(sum(testid))
 
@@ -111,7 +126,8 @@ all_adata_final = anndata.AnnData.concatenate(train_adata_final, test_adata_fina
 
 conditions_key = ['cell.type', 'stim']
 
-### train VAE
+# Stage 1: learn a compact expression space. The diffusion model is fitted to
+# these latent representations rather than directly to all expression values.
 os.environ['CUDA_VISIBLE_DEVICES'] = str(cuda_id)
 
 
@@ -272,6 +288,8 @@ from util_diff import train_loop_diffusion
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler, DDPMSchedulerOutput
 
 
+# Stage 2: fit p(z | cell type, stimulation). Any latent scale factor used here
+# must also be divided out before decoding generated latents below.
 SCALE_FACTOR = 1.0
 # SCALE_FACTOR = 1.0/torch.std(latent_train_data).item()
 print("SCALE_FACTOR:", SCALE_FACTOR)
@@ -352,6 +370,8 @@ len(celltypelist_temp_np)
 from util_plot import *
 from util_inference_diff import inference_process_batch_conditions, inference_process_strength
 
+# PerturbLDM-ctrl path: begin from each target cell type's observed control
+# latent and vary the amount of injected noise before conditional denoising.
 strenth2expr = {}
 strenth2result = {}
 for strenth0 in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
@@ -398,6 +418,8 @@ compute_metrics_single(gt_test[test_adata_final.obs['cell.type']==tc].mean(0), c
 from util_plot import *
 from util_inference_diff import inference_process_batch_conditions
 
+# PerturbLDM path: generate the missing states from noise using condition labels
+# only. Rows follow test_adata_final so predictions remain aligned to metadata.
 print('construct test batch for inference, only condition inputs')
 
 test_batch = {xx: torch.LongTensor(yy) for xx,yy in label_test_dict.items()}

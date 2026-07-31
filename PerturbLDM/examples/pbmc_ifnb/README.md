@@ -13,6 +13,21 @@ The processed PBMC object is derived from Kang et al. (GSE96583) and must contai
 
 The exact rule is recorded in `split_contract.tsv`.
 
+## How to read the example
+
+The script is organised as a single end-to-end workflow:
+
+1. **Input and split:** validate `cell.type` and `stim`, remove megakaryocytes and construct the response-transfer hold-out above.
+2. **Shared feature space:** preprocess expression and keep one ordered gene set for fitting, generation and evaluation.
+3. **Latent model:** fit the VAE and encode the fitting cells into 128-dimensional latent representations.
+4. **Conditional diffusion:** learn latent denoising conditioned on cell type and stimulation state.
+5. **Two inference paths:** `PerturbLDM` starts from noise, whereas `PerturbLDM-ctrl` starts from observed control latents and applies controlled noising before denoising.
+6. **Outputs:** decode generated latents, retain row/condition alignment and write checkpoints, predictions and condition-level metrics.
+
+Inline comments in `exp_pbmc_ifn.py` mark these stages. The much smaller
+`perturbldm-pbmc-smoke` command follows the same conceptual path but is only an
+installation check.
+
 ## Full manuscript workflow
 
 Run from the `PerturbLDM` repository directory:

@@ -288,6 +288,10 @@ def main() -> int:
     ) < 1:
         raise ValueError("All numeric smoke-test settings must be positive")
 
+    # 1. Validate the input contract and reproduce the biological hold-out.
+    # Only the stimulated states are hidden; controls from the same cell types
+    # remain available, so this is response transfer rather than prediction of
+    # a completely unseen cell type.
     seed_everything(args.seed, args.threads)
     device = resolve_device(args.device)
     adata = sc.read_h5ad(input_path)
@@ -322,6 +326,8 @@ def main() -> int:
                 f"PBMC split lacks control or held-out cells for {cell_type}"
             )
 
+    # 2. Keep a small, condition-stratified subset so this remains a CPU-safe
+    # installation test. Use examples/exp_pbmc_ifn.py for the full experiment.
     train_indices = stratified_sample_indices(
         train_full.obs,
         group_columns=("cell.type", "stim"),
@@ -337,6 +343,8 @@ def main() -> int:
     train = train_full[train_indices].copy()
     test = test_full[test_indices].copy()
 
+    # 3. Select features from the sampled training cells only, then preserve
+    # exactly the same gene order in the held-out cells.
     gene_count = min(args.genes, train.n_vars)
     sc.pp.highly_variable_genes(train, n_top_genes=gene_count, flavor="seurat")
     genes = train.var_names[train.var["highly_variable"]].tolist()
@@ -375,6 +383,8 @@ def main() -> int:
         dtype=torch.long,
     )
 
+    # 4. Compress expression first, then learn p(z | cell type, stimulation)
+    # with the conditional denoiser. These defaults are intentionally tiny.
     latent_model, vae_history, train_latents = train_latent_model(
         train_x,
         latent_dim=args.latent_dim,
@@ -392,6 +402,8 @@ def main() -> int:
         batch_size=args.batch_size,
         device=device,
     )
+    # 5. Generate each missing stimulated state from diffusion noise. The
+    # decoder maps generated latent samples back to the selected genes.
     predicted = generate(
         denoiser,
         scheduler,
@@ -404,6 +416,8 @@ def main() -> int:
         seed=args.seed + 2,
     )
 
+    # 6. Report both whole-state agreement and response relative to the matched
+    # control mean; the latter prevents background expression from dominating.
     metrics: dict[str, dict[str, float | None]] = {}
     train_cell_type = train.obs["cell.type"].astype(str).to_numpy()
     train_stim = train.obs["stim"].astype(str).to_numpy()

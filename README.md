@@ -69,10 +69,13 @@ env -u LD_LIBRARY_PATH python -m PerturbLDM.examples.test_pbmc_training \
 ## Five-minute PBMC diffusion example
 
 The installed command below runs a standalone CPU-safe end-to-end example on
-the Kang et al. PBMC object. It is designed to complete within five minutes on
-a conventional CPU; actual time depends on hardware. The processed input is not
-bundled: supply a compatible GSE96583-derived H5AD containing the
-`cell.type` and `stim` observation columns.
+the PBMC dataset from [Kang et al., *Nature Biotechnology* 36, 89–94
+(2018)](https://doi.org/10.1038/nbt.4042), available from
+[GEO GSE96583](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE96583).
+It is designed to complete within five minutes on a conventional CPU; actual
+time depends on hardware. The processed input is not bundled: supply a
+compatible GSE96583-derived H5AD containing the `cell.type` and `stim`
+observation columns.
 
 ```bash
 python -m PerturbLDM.examples.test_pbmc_training \

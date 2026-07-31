@@ -4,7 +4,10 @@ This example reproduces the manuscript task that asks whether IFN-beta response 
 
 ## Experimental split
 
-The processed PBMC object is derived from Kang et al. (GSE96583) and must contain `cell.type` and `stim` in `adata.obs`.
+The processed PBMC object is derived from [Kang et al., *Nature Biotechnology*
+36, 89–94 (2018)](https://doi.org/10.1038/nbt.4042) and is available from
+[GEO GSE96583](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE96583).
+It must contain `cell.type` and `stim` in `adata.obs`.
 
 - IFN-beta-stimulated B cells, CD8 T cells and FCGR3A+ monocytes are held out.
 - The unstimulated (`ctrl`) cells from those same cell types remain in the fitting data and provide their observed cellular backgrounds.
@@ -65,4 +68,9 @@ The primary experiment conditions generation on cell type and stimulation state.
 
 ## Data
 
-The processed input is derived from Kang et al. (GSE96583) and is staged at `external_inputs/pbmc/pbmc_IFN_filtered.h5ad`. Model checkpoints and prediction objects are written to the selected output directory.
+The processed input is derived from the Kang et al. dataset
+([*Nature Biotechnology*, 2018](https://doi.org/10.1038/nbt.4042);
+[GEO GSE96583](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE96583))
+and is staged at `external_inputs/pbmc/pbmc_IFN_filtered.h5ad`. Model
+checkpoints and prediction objects are written to the selected output
+directory.

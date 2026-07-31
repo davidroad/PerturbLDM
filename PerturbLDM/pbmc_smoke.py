@@ -166,7 +166,7 @@ def write_diagnostic_plots(
     axes[1].set(
         title="Conditional diffusion",
         xlabel="Epoch",
-        ylabel="Noise-prediction MSE",
+        ylabel="Velocity-prediction MSE",
     )
     for axis in axes:
         axis.spines[["top", "right"]].set_visible(False)
@@ -270,7 +270,7 @@ def write_run_artifacts(
                 {
                     "stage": "conditional_diffusion",
                     "epoch": epoch,
-                    "loss": "noise_prediction_mse",
+                    "loss": "velocity_prediction_mse",
                     "value": value,
                 }
             )
@@ -371,7 +371,7 @@ def write_run_artifacts(
             "optimizer": "AdamW",
             "learning_rate": 5e-4,
             "weight_decay": 1e-4,
-            "prediction_type": "epsilon",
+            "prediction_type": "v_prediction",
             "training_timesteps": int(scheduler.config.num_train_timesteps),
             "inference_steps": args.inference_steps,
             "beta_start": float(scheduler.config.beta_start),
@@ -478,7 +478,7 @@ def train_denoiser(
     ).to(device)
     scheduler = DDPMScheduler(
         num_train_timesteps=50,
-        prediction_type="epsilon",
+        prediction_type="v_prediction",
         beta_start=0.00085,
         beta_end=0.015,
     )
@@ -510,7 +510,8 @@ def train_denoiser(
                 cell_type=batch_cell_ids.to(device),
                 stim=batch_stim_ids.to(device),
             )["predict_output"]
-            loss = F.mse_loss(prediction, noise)
+            target = scheduler.get_velocity(latents, noise, timesteps)
+            loss = F.mse_loss(prediction, target)
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 3.0)
@@ -858,6 +859,7 @@ def run_example() -> int:
             "vae_epochs": args.vae_epochs,
             "vae_loss": vae_history,
             "diffusion_epochs": args.diffusion_epochs,
+            "prediction_type": scheduler.config.prediction_type,
             "diffusion_loss": diffusion_history,
             "inference_steps": args.inference_steps,
         },

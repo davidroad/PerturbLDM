@@ -8,7 +8,14 @@ Code accompanying **PerturbLDM: conditional latent diffusion for modelling singl
   <img src="docs/figures/fig1_PerturbLDM.png" alt="Overview of the PerturbLDM framework and study design" width="100%">
 </a>
 
-**Figure 1 | PerturbLDM framework and study design.** **a,** PerturbLDM encodes single-cell expression into a latent space and learns a conditional diffusion process that generates response states from cellular context, perturbation, dose and control-state information. Tahoe-100M provides the atlas-scale foundation for model fitting and quantitative benchmarking. **b,** In PANACEA, shared anchor conditions align assay platforms so that Tahoe-derived response profiles can be transferred to an external experimental context and used to organise drug-response hypotheses. **c,** In fetal colon, models fitted to early and mature enterocyte states generate the held-out developmental transition. **d,** In PBMCs, response programmes learned across measured immune populations generate held-out, lineage-specific IFN-beta-stimulated states.
+**Figure 1 | PerturbLDM framework and scale-to-application evaluation design.** **a,** Tahoe-100M provides the atlas-scale pretraining and quantitative benchmarking setting. PerturbLDM combines a variational autoencoder with conditional latent diffusion under cellular-context, perturbation, dose and control-state conditioning. **b,** In PANACEA, shared anchor conditions calibrate an external assay before Tahoe-derived profiles are organised by predicted pathway effects. **c,** In fetal colon, broad-stage 1 and 3 enterocytes provide the observed developmental anchors used to generate the pooled held-out broad-stage 2 population, without PCW-specific conditioning. **d,** In PBMCs, retained controls support generation of three held-out, lineage-specific IFN-beta response states.
+
+Tahoe-100M supplies the study's central quantitative evidence. PANACEA examines
+downstream reuse of Tahoe-derived predictions after assay calibration, whereas
+the fetal-colon and PBMC analyses fit the same generative framework separately
+to smaller, study-specific datasets. Evaluation spans complete expression
+profiles, matched-control effects, response genes and programmes, and local
+population distributions.
 
 ## Repository layout
 
@@ -33,7 +40,7 @@ python -m pip install \
 python -c "import PerturbLDM; print(PerturbLDM.__file__)"
 ```
 
-The explicit PyTorch command installs the CPU wheel used by the smoke test.
+The explicit PyTorch command installs the CPU wheel used by the PBMC example.
 GPU users should instead install the PyTorch build matching their CUDA runtime
 before installing PerturbLDM.
 
@@ -50,12 +57,12 @@ path:
 env -u LD_LIBRARY_PATH python -c "import torch; print(torch.__version__)"
 ```
 
-Use the same prefix for the smoke test on such a cluster:
+Use the same prefix for the PBMC test on such a cluster:
 
 ```bash
-env -u LD_LIBRARY_PATH perturbldm-pbmc-smoke \
+env -u LD_LIBRARY_PATH python -m PerturbLDM.examples.test_pbmc_training \
   --input /path/to/pbmc_IFN_filtered.h5ad \
-  --output-dir outputs/pbmc_smoke \
+  --output-dir outputs/pbmc_example \
   --device cpu
 ```
 
@@ -63,7 +70,9 @@ env -u LD_LIBRARY_PATH perturbldm-pbmc-smoke \
 
 The installed command below runs a standalone CPU-safe end-to-end example on
 the Kang et al. PBMC object. It is designed to complete within five minutes on
-a conventional CPU; actual time depends on hardware.
+a conventional CPU; actual time depends on hardware. The processed input is not
+bundled: supply a compatible GSE96583-derived H5AD containing the
+`cell.type` and `stim` observation columns.
 
 ```bash
 python -m PerturbLDM.examples.test_pbmc_training \
@@ -102,7 +111,7 @@ after the response-transfer split (11,842 fitting and 1,710 held-out cells in
 the supplied object), 1,000 training-selected HVGs, a 64-dimensional latent
 space, 40 latent-model epochs, 160 diffusion epochs and 50 inference steps. It
 does not run hyperparameter search or cross-validation. The verified default
-run completed in 116 seconds with 1.84 GB peak memory on the reference CPU
+run completed in 125 seconds with 1.88 GB peak memory on the reference CPU
 server; runtime varies with hardware. The legacy `perturbldm-pbmc-smoke`
 command is retained as an alias.
 
@@ -120,12 +129,24 @@ python -u examples/exp_pbmc_ifn.py \
 
 See `PerturbLDM/examples/pbmc_ifnb/README.md` for the biological task, split and preprocessing.
 
-## Tahoe benchmark figures
+## Tahoe benchmarks and source data
 
-The Tahoe code and paired Figshare source tables recreate the absolute-expression benchmark and Supplementary Fig. S3e-h selection diagnostics. Commands are documented in `benchmarks/tahoe_random_split/README.md`.
+The Tahoe code and paired Figshare tables support the held-out benchmark,
+including absolute-expression, matched-control-effect, gene-program and local
+distribution summaries. The repository also recreates the absolute-expression
+comparison and Supplementary Fig. S3e-h model-selection diagnostics. Commands
+are documented in `benchmarks/tahoe_random_split/README.md`.
+
+PANACEA source tables are distributed in the paired Figshare deposit; its
+atlas-scale model fitting and large intermediate prediction objects are not
+bundled as a standalone GitHub workflow.
 
 ## Data
 
-Raw and processed H5AD files are obtained from the sources cited in the manuscript and staged outside the repository. Model checkpoints, latent tensors and per-cell predictions are generated by the released workflows.
+Raw and processed H5AD files are obtained from the sources cited in the
+manuscript and staged outside the repository. Large model checkpoints, latent
+tensors and per-cell predictions are likewise kept outside GitHub. The paired
+Figshare deposit contains the compact source tables underlying the reported
+figures and statistics.
 
 The code is released under the MIT License.

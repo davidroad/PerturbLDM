@@ -24,9 +24,11 @@ The script is organised as a single end-to-end workflow:
 5. **Two inference paths:** `PerturbLDM` starts from noise, whereas `PerturbLDM-ctrl` starts from observed control latents and applies controlled noising before denoising.
 6. **Outputs:** decode generated latents, retain row/condition alignment and write checkpoints, predictions and condition-level metrics.
 
-Inline comments in `exp_pbmc_ifn.py` mark these stages. The much smaller
-`perturbldm-pbmc-smoke` command follows the same conceptual path but is only an
-installation check.
+Inline comments in `exp_pbmc_ifn.py` mark these stages. The installed
+`python -m PerturbLDM.examples.test_pbmc_training` workflow applies the same
+biological hold-out in a compact, CPU-safe configuration. It writes losses,
+diagnostic metrics, figures and checkpoints, but is an execution test rather
+than manuscript reproduction.
 
 ## Full manuscript workflow
 
@@ -42,6 +44,18 @@ python -u examples/exp_pbmc_ifn.py \
 ```
 
 The full script trains the latent model and conditional denoiser, generates the three held-out stimulated states and writes condition-level metrics and prediction objects. The fitted model settings are supplied in `configs/pbmc_active_run/`.
+
+## Compact post-install test
+
+```bash
+python -m PerturbLDM.examples.test_pbmc_training \
+  --input /path/to/pbmc_IFN_filtered.h5ad \
+  --output-dir outputs/pbmc_example \
+  --device cpu
+```
+
+The processed H5AD is not bundled with the package and must contain
+`cell.type` and `stim` in `adata.obs`.
 
 ## Preprocessing
 

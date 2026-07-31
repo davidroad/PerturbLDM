@@ -66,11 +66,25 @@ the Kang et al. PBMC object. It is designed to complete within five minutes on
 a conventional CPU; actual time depends on hardware.
 
 ```bash
-perturbldm-pbmc-example \
+python -m PerturbLDM.examples.test_pbmc_training \
   --input /path/to/pbmc_IFN_filtered.h5ad \
   --output-dir outputs/pbmc_example \
   --device cpu
 ```
+
+The Python test prints eight numbered stages, periodic latent-model and
+diffusion losses, condition-level diagnostic correlations and the absolute
+output directory. A completed run ends with:
+
+```text
+[Step 8/8] Validate the run and report completion
+[SUCCESS] PerturbLDM test training completed.
+Outputs: /absolute/path/to/outputs/pbmc_example
+```
+
+Any uncaught error or failed finite-value/shape check prints `[FAILED]` and
+returns a non-zero exit status. The equivalent installed command is
+`perturbldm-pbmc-example`.
 
 The command validates the required `cell.type` and `stim` metadata, applies the
 response-transfer hold-out of IFN-beta-stimulated B cells, CD8 T cells and

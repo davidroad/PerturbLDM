@@ -36,6 +36,20 @@ HELD_OUT_CELL_TYPES = (
     "FCGR3A+ Monocytes",
 )
 REQUIRED_OBS_COLUMNS = ("cell.type", "stim")
+TOTAL_STEPS = 8
+
+
+def announce_step(number: int, message: str) -> None:
+    print(f"\n[Step {number}/{TOTAL_STEPS}] {message}", flush=True)
+
+
+def report_epoch(stage: str, epoch: int, epochs: int, loss: float) -> None:
+    interval = max(1, epochs // 5)
+    if epoch == 1 or epoch == epochs or epoch % interval == 0:
+        print(
+            f"  {stage}: epoch {epoch:>3}/{epochs} | loss={loss:.6f}",
+            flush=True,
+        )
 
 
 def parse_args() -> argparse.Namespace:
@@ -416,7 +430,7 @@ def train_latent_model(
     )
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
     history: list[float] = []
-    for _ in range(epochs):
+    for epoch in range(1, epochs + 1):
         model.train()
         losses: list[float] = []
         for (batch,) in loader:
@@ -427,7 +441,9 @@ def train_latent_model(
             torch.nn.utils.clip_grad_norm_(model.parameters(), 3.0)
             optimizer.step()
             losses.append(float(loss.detach().cpu()))
-        history.append(float(np.mean(losses)))
+        epoch_loss = float(np.mean(losses))
+        history.append(epoch_loss)
+        report_epoch("latent model", epoch, epochs, epoch_loss)
 
     model.eval()
     with torch.no_grad():
@@ -474,7 +490,7 @@ def train_denoiser(
     )
     optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4, weight_decay=1e-4)
     history: list[float] = []
-    for _ in range(epochs):
+    for epoch in range(1, epochs + 1):
         model.train()
         losses: list[float] = []
         for latents, batch_cell_ids, batch_stim_ids in loader:
@@ -500,7 +516,9 @@ def train_denoiser(
             torch.nn.utils.clip_grad_norm_(model.parameters(), 3.0)
             optimizer.step()
             losses.append(float(loss.detach().cpu()))
-        history.append(float(np.mean(losses)))
+        epoch_loss = float(np.mean(losses))
+        history.append(epoch_loss)
+        report_epoch("conditional diffusion", epoch, epochs, epoch_loss)
     return model, scheduler, history
 
 
@@ -539,7 +557,7 @@ def generate(
     return expression.detach().cpu().numpy().astype(np.float32)
 
 
-def main() -> int:
+def run_example() -> int:
     args = parse_args()
     started = time.time()
     input_path = args.input.resolve()
@@ -560,12 +578,17 @@ def main() -> int:
     if args.cells_per_condition < 0:
         raise ValueError("--cells-per-condition must be zero or positive")
 
+    seed_everything(args.seed, args.threads)
+    device = resolve_device(args.device)
+    announce_step(1, "Load, validate and preprocess the PBMC input")
+    print(f"  input: {input_path}", flush=True)
+    print(f"  output: {output_dir}", flush=True)
+    print(f"  device: {device}", flush=True)
+
     # 1. Validate the input contract and reproduce the biological hold-out.
     # Only the stimulated states are hidden; controls from the same cell types
     # remain available, so this is response transfer rather than prediction of
     # a completely unseen cell type.
-    seed_everything(args.seed, args.threads)
-    device = resolve_device(args.device)
     adata = sc.read_h5ad(input_path)
     missing = [column for column in REQUIRED_OBS_COLUMNS if column not in adata.obs]
     if missing:
@@ -577,7 +600,12 @@ def main() -> int:
     sc.pp.log1p(adata)
     sc.pp.filter_genes(adata, min_cells=max(1, int(0.01 * adata.n_obs)))
     adata = adata[adata.obs["cell.type"] != "Megakaryocytes"].copy()
+    print(
+        f"  retained {adata.n_obs:,} cells and {adata.n_vars:,} genes after filtering",
+        flush=True,
+    )
 
+    announce_step(2, "Construct the response-transfer train/test split")
     held_out = adata.obs["cell.type"].isin(HELD_OUT_CELL_TYPES) & (
         adata.obs["stim"] == "stim"
     )
@@ -597,6 +625,10 @@ def main() -> int:
             raise ValueError(
                 f"PBMC split lacks control or held-out cells for {cell_type}"
             )
+    print(
+        f"  fitting cells: {train_full.n_obs:,} | held-out cells: {test_full.n_obs:,}",
+        flush=True,
+    )
 
     # 2. Keep a condition-stratified subset so the complete example remains
     # CPU-safe and comfortably below its five-minute runtime target.
@@ -621,6 +653,8 @@ def main() -> int:
         test = test_full[test_indices].copy()
         sampling_rule = f"up_to_{args.cells_per_condition}_cells_per_condition"
 
+    announce_step(3, "Select training-only HVGs and align held-out features")
+
     # 3. Select features from the sampled training cells only, then preserve
     # exactly the same gene order in the held-out cells.
     gene_count = min(args.genes, train.n_vars)
@@ -634,6 +668,11 @@ def main() -> int:
     test = test[:, genes].copy()
     train_x = to_dense_float32(train.X)
     test_x = to_dense_float32(test.X)
+    print(
+        f"  using {train.n_obs:,} fitting cells, {test.n_obs:,} held-out cells "
+        f"and {len(genes):,} genes",
+        flush=True,
+    )
 
     cell_types = sorted(train.obs["cell.type"].astype(str).unique().tolist())
     stim_values = sorted(train.obs["stim"].astype(str).unique().tolist())
@@ -664,6 +703,7 @@ def main() -> int:
     # 4. Compress expression first, then learn p(z | cell type, stimulation)
     # with the conditional denoiser. The defaults are deliberately compact,
     # but long enough to produce interpretable training-loss trajectories.
+    announce_step(4, "Train the latent expression model")
     latent_model, vae_history, train_latents = train_latent_model(
         train_x,
         latent_dim=args.latent_dim,
@@ -671,6 +711,7 @@ def main() -> int:
         batch_size=args.batch_size,
         device=device,
     )
+    announce_step(5, "Train the conditional diffusion model")
     denoiser, scheduler, diffusion_history = train_denoiser(
         train_latents,
         train_cell_ids,
@@ -683,6 +724,7 @@ def main() -> int:
     )
     # 5. Generate each missing stimulated state from diffusion noise. The
     # decoder maps generated latent samples back to the selected genes.
+    announce_step(6, "Generate the held-out stimulated states")
     predicted = generate(
         denoiser,
         scheduler,
@@ -694,6 +736,8 @@ def main() -> int:
         device=device,
         seed=args.seed + 2,
     )
+
+    announce_step(7, "Compute metrics and write figures, tables and checkpoints")
 
     # 6. Report both whole-state agreement and response relative to the matched
     # control mean; the latter prevents background expression from dominating.
@@ -734,6 +778,13 @@ def main() -> int:
                 )
             ),
         }
+        print(
+            f"  {cell_type}: whole-state r="
+            f"{metrics[cell_type]['absolute_profile_pearson']:.3f}; "
+            f"matched-control effect r="
+            f"{metrics[cell_type]['matched_control_effect_pearson']:.3f}",
+            flush=True,
+        )
 
     finite_fraction = float(np.isfinite(predicted).mean())
     passed = (
@@ -833,9 +884,34 @@ def main() -> int:
     }
     output_path = output_dir / "pbmc_example_summary.json"
     output_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps(summary, indent=2))
-    print(f"Summary written to {output_path}")
+    announce_step(8, "Validate the run and report completion")
+    print(
+        f"  generated shape: {predicted.shape} | finite fraction: {finite_fraction:.3f}",
+        flush=True,
+    )
+    print(f"  summary: {output_path}", flush=True)
+    print(f"  elapsed: {summary['elapsed_seconds']:.1f} seconds", flush=True)
+    if passed:
+        print(
+            f"\n[SUCCESS] PerturbLDM test training completed.\n"
+            f"Outputs: {output_dir}",
+            flush=True,
+        )
+    else:
+        print("\n[FAILED] PerturbLDM test training failed validation.", flush=True)
     return 0 if passed else 1
+
+
+def main() -> int:
+    try:
+        return run_example()
+    except Exception as error:
+        print(
+            f"\n[FAILED] PerturbLDM test training stopped: "
+            f"{type(error).__name__}: {error}",
+            flush=True,
+        )
+        raise
 
 
 if __name__ == "__main__":

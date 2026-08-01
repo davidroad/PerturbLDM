@@ -133,7 +133,10 @@ The simple baseline script evaluates `MatchedCtrl`, `CellLineMean`, `DrugDoseMea
 
 ## PBMC IFN-beta example
 
-The PBMC example is documented in `examples/pbmc_ifnb/`. It records the exact stimulated-cell hold-out rule and links the fitted model configurations to the full training entry point:
+The PBMC example is documented in `examples/pbmc_ifnb/`. It records the exact
+stimulated-cell hold-out rule and links the fitted model configurations to the
+full training entry point. The full workflow requires CUDA and a compatible
+GPU; CPU users should run the compact post-install test below.
 
 ```bash
 python -u examples/exp_pbmc_ifn.py \

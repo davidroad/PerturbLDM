@@ -37,7 +37,7 @@ python -m pip install --upgrade pip
 python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
 python -m pip install \
   "perturbldm[pbmc] @ git+https://github.com/davidroad/PerturbLDM.git"
-python -c "import PerturbLDM; print(PerturbLDM.__file__)"
+env -u LD_LIBRARY_PATH python -c "import PerturbLDM; print(PerturbLDM.__file__)"
 ```
 
 The explicit PyTorch command installs the CPU wheel used by the PBMC example.
@@ -116,7 +116,10 @@ command is retained as an alias.
 
 ## Full PBMC example
 
-Stage the processed GSE96583-derived object under the documented relative path, then run the experiment:
+The full manuscript workflow requires CUDA and a compatible GPU. CPU users
+should use the five-minute PBMC diffusion example above. For the full workflow,
+stage the processed GSE96583-derived object under the documented relative path,
+then run:
 
 ```bash
 cd PerturbLDM

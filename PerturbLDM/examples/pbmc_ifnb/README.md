@@ -35,6 +35,9 @@ than manuscript reproduction.
 
 ## Full manuscript workflow
 
+This workflow requires CUDA and a compatible GPU. CPU users should run the
+compact post-install test below.
+
 Run from the `PerturbLDM` repository directory:
 
 ```bash

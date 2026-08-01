@@ -27,11 +27,11 @@ population distributions.
 
 ## Installation
 
-Python 3.10 or 3.11 is recommended. Create an isolated environment and install
+Python ≥3.10 is required. Create an isolated environment and install
 PerturbLDM directly from GitHub:
 
 ```bash
-python3.10 -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install torch --index-url https://download.pytorch.org/whl/cpu

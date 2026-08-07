@@ -230,8 +230,8 @@ def validate_frozen_selections(run_root: Path, synthetic: bool) -> dict:
         "MLP selection does not match the training/control cache manifest",
     )
 
-    mlp_encoder_path = run_root / "provenance/mlp/condition_encoder.json"
-    rf_encoder_path = run_root / "provenance/rf/condition_encoder.json"
+    mlp_encoder_path = run_root / "run_metadata/mlp/condition_encoder.json"
+    rf_encoder_path = run_root / "run_metadata/rf/condition_encoder.json"
     mlp_encoder = read_json(mlp_encoder_path, "MLP condition encoder")
     rf_encoder = read_json(rf_encoder_path, "RF condition encoder")
     require(mlp_encoder == rf_encoder, "MLP and RF condition encoders differ")
@@ -390,7 +390,7 @@ def validate_frozen_selections(run_root: Path, synthetic: bool) -> dict:
         "RF artifact parameters differ from the frozen selection",
     )
 
-    rf_input_hashes_path = run_root / "provenance/rf/input_hashes_and_stats.json"
+    rf_input_hashes_path = run_root / "run_metadata/rf/input_hashes_and_stats.json"
     rf_input_hashes = read_json(rf_input_hashes_path, "RF input-hash record")
     require(
         rf_input_hashes["condition_encoder"]["sha256"] == sha256(rf_encoder_path),
@@ -406,7 +406,7 @@ def validate_frozen_selections(run_root: Path, synthetic: bool) -> dict:
         "RF training/control cache-manifest hash mismatch",
     )
 
-    rf_features_path = run_root / "provenance/rf/selected_train_only_control_features.csv"
+    rf_features_path = run_root / "run_metadata/rf/selected_train_only_control_features.csv"
     rf_features = pd.read_csv(rf_features_path)
     required_feature_columns = {
         "selection_rank_one_based",
@@ -992,7 +992,7 @@ def metric_summary(table: pd.DataFrame) -> dict:
     return summary
 
 
-def deterministic_audit_indices(condition_ids: pd.Series, count: int = 10) -> np.ndarray:
+def deterministic_verification_indices(condition_ids: pd.Series, count: int = 10) -> np.ndarray:
     scores = np.asarray(
         [
             int(hashlib.sha256(value.encode("utf-8")).hexdigest()[:16], 16)
@@ -1003,13 +1003,13 @@ def deterministic_audit_indices(condition_ids: pd.Series, count: int = 10) -> np
     return np.sort(np.argsort(scores, kind="stable")[: min(count, len(scores))])
 
 
-def audit_metrics(
+def verification_metrics(
     combined: pd.DataFrame,
     metadata: pd.DataFrame,
     array_paths: dict,
     tolerance: float = 2e-10,
 ) -> pd.DataFrame:
-    indices = deterministic_audit_indices(metadata["condition_id"])
+    indices = deterministic_verification_indices(metadata["condition_id"])
     records: list[dict] = []
     observed_abs = np.load(array_paths["observed_expression"], mmap_mode="r")
     observed_effect = np.load(array_paths["observed_effect"], mmap_mode="r")
@@ -1033,7 +1033,7 @@ def audit_metrics(
                 combined["method"].eq(method)
                 & combined["condition_row_zero_based"].eq(index)
             ]
-            require(len(row) == 1, "audit condition lookup is not one-to-one")
+            require(len(row) == 1, "verification condition lookup is not one-to-one")
             row = row.iloc[0]
             recomputed = {
                 "MSE": absolute["mse"][0],
@@ -1057,7 +1057,7 @@ def audit_metrics(
             )
             require(
                 maximum_difference <= tolerance,
-                f"{method} metric audit failed for row {index}: {maximum_difference}",
+                f"{method} metric verification failed for row {index}: {maximum_difference}",
             )
             records.append(
                 {
@@ -1065,7 +1065,7 @@ def audit_metrics(
                     "condition_row_zero_based": int(index),
                     "condition_id": metadata.iloc[index]["condition_id"],
                     "maximum_absolute_metric_difference": maximum_difference,
-                    "status": "AUDIT_OK",
+                    "status": "VERIFICATION_OK",
                 }
             )
     return pd.DataFrame(records)
@@ -1246,9 +1246,9 @@ def main() -> None:
             "RF": metric_summary(rf_metrics),
         },
     )
-    audit = audit_metrics(combined, cache["metadata"], array_paths)
-    audit_path = output_root / "checks/deterministic_metric_recomputation.csv"
-    write_csv_atomic(audit_path, audit)
+    verification = verification_metrics(combined, cache["metadata"], array_paths)
+    verification_path = output_root / "checks/deterministic_metric_recomputation.csv"
+    write_csv_atomic(verification_path, verification)
 
     output_records = {
         "condition_order": file_record(condition_order_path),
@@ -1257,7 +1257,7 @@ def main() -> None:
         "rf_condition_metrics": file_record(rf_metrics_path),
         "combined_condition_metrics": file_record(combined_path),
         "metric_summary": file_record(summary_path),
-        "metric_recomputation_audit": file_record(audit_path),
+        "metric_recomputation_verification": file_record(verification_path),
         "arrays": {
             key: file_record(path) for key, path in sorted(array_paths.items())
         },
@@ -1284,9 +1284,9 @@ def main() -> None:
             "matched-control-relative delta expression, with absolute expression "
             "recovered by addition of the same matched control"
         ),
-        "deterministic_metric_rows_recomputed": len(audit),
-        "maximum_metric_audit_difference": float(
-            audit["maximum_absolute_metric_difference"].max()
+        "deterministic_metric_rows_recomputed": len(verification),
+        "maximum_metric_verification_difference": float(
+            verification["maximum_absolute_metric_difference"].max()
         ),
         "selection_gate": file_record(gate_path),
         "inputs": {

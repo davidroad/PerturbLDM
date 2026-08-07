@@ -23,6 +23,7 @@ population distributions.
 - `PerturbLDM/examples/pbmc_ifnb/`: PBMC IFN-beta response-transfer example and exact hold-out definition.
 - `PerturbLDM/examples/cellline_drug_dose_tahoe/`: Tahoe training and inference entry points.
 - `benchmarks/tahoe_random_split/`: MLP, random-forest, CPA and chemCPA benchmark code plus figure wrappers.
+- `analysis/pbmc_immunometabolism/`: source-data export and plotting code for the FAO--OXPHOS analysis in Fig. 5h and Supplementary Fig. S13.
 - `docs/figures/`: the manuscript overview figure in PDF and README-preview formats.
 
 ## Installation
@@ -142,6 +143,15 @@ are documented in `benchmarks/tahoe_random_split/README.md`.
 PANACEA source tables are distributed in the paired Figshare deposit; its
 atlas-scale model fitting and large intermediate prediction objects are not
 bundled as a standalone GitHub workflow.
+
+## Custom analyses
+
+The PBMC immunometabolism module recreates the lineage-resolved FAO--OXPHOS
+effect and distribution comparison in Fig. 5h and the component-score display
+in Supplementary Fig. S13. It reads compact source tables from the paired
+Figshare package and also provides exporters for users with the aligned
+measured, PerturbLDM and scGen prediction objects. See
+`analysis/pbmc_immunometabolism/README.md`.
 
 ## Data
 

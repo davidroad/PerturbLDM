@@ -43,13 +43,13 @@ def style_axis(ax):
     ax.tick_params(length=2.6, width=0.65)
 
 
-def panel_label(ax, label, x=-0.15, y=1.08):
+def panel_label(ax, label, x=-0.18, y=1.08):
     ax.text(
         x,
         y,
         label,
         transform=ax.transAxes,
-        fontsize=20,
+        fontsize=16,
         fontfamily=PANEL_FONT,
         fontweight="normal",
         va="top",
@@ -57,7 +57,7 @@ def panel_label(ax, label, x=-0.15, y=1.08):
 
 
 def load_chemcpa_reconstruction():
-    rows = pd.read_csv(SOURCE / "chemcpa_training_diagnostics_source.csv")
+    rows = pd.read_csv(SOURCE / "chemcpa_training_history.csv")
     selected = rows[
         (rows["model"] == "chemCPA")
         & (rows["metric"] == "reconstruction_mse")
@@ -150,15 +150,16 @@ def plot_rf(ax):
         linewidths=1.5,
         zorder=4,
     )
-    for _, row in search.iterrows():
-        ax.annotate(
-            f"{row['formal_validation_delta_mse']:.9f}",
-            (row["min_samples_leaf"], row["formal_validation_delta_mse"]),
-            xytext=(0, 8),
-            textcoords="offset points",
-            ha="center",
-            fontsize=7.5,
-        )
+    ax.annotate(
+        f"{best_value:.4g}",
+        (best_leaf, best_value),
+        xytext=(8, 10),
+        textcoords="offset points",
+        ha="left",
+        fontsize=7.2,
+        bbox=dict(facecolor="white", edgecolor="none", alpha=0.96, pad=1.0),
+        zorder=8,
+    )
     span = float(
         search["formal_validation_delta_mse"].max()
         - search["formal_validation_delta_mse"].min()
@@ -193,7 +194,7 @@ def plot_rf(ax):
 
 def plot_cpa(parent_spec, fig):
     inner = GridSpecFromSubplotSpec(
-        2, 1, subplot_spec=parent_spec, height_ratios=[1.05, 0.95], hspace=0.16
+        2, 1, subplot_spec=parent_spec, height_ratios=[1.05, 0.95], hspace=0.22
     )
     ax_loss = fig.add_subplot(inner[0])
     ax_metric = fig.add_subplot(inner[1], sharex=ax_loss)
@@ -223,12 +224,16 @@ def plot_cpa(parent_spec, fig):
         label="Validation",
     )
     ax_loss.axvline(best_epoch, color=COLORS["selection"], linewidth=0.8, linestyle=(0, (3, 2)))
-    ax_loss.set_ylabel("Reconstruction loss")
+    ax_loss.set_ylabel("")
+    ax_loss.text(
+        -0.22, 0.50, "Reconstruction\nloss", transform=ax_loss.transAxes,
+        ha="right", va="center", fontsize=8.6, linespacing=0.95, clip_on=False,
+    )
     ax_loss.set_title("CPA", loc="left", fontweight="normal", pad=5)
     ax_loss.legend(frameon=False, loc="upper right", ncol=2)
     ax_loss.tick_params(labelbottom=False)
     style_axis(ax_loss)
-    panel_label(ax_loss, "g")
+    panel_label(ax_loss, "g", x=-0.24, y=1.08)
 
     ax_metric.plot(
         metric["epoch_one_based"],
@@ -251,7 +256,11 @@ def plot_cpa(parent_spec, fig):
     ax_metric.set_xlim(0.7, 8.3)
     ax_metric.set_xticks(range(1, 9))
     ax_metric.set_xlabel("Epoch")
-    ax_metric.set_ylabel("Validation CPA metric")
+    ax_metric.set_ylabel("")
+    ax_metric.text(
+        -0.22, 0.50, "Validation CPA\nmetric", transform=ax_metric.transAxes,
+        ha="right", va="center", fontsize=8.6, linespacing=0.95, clip_on=False,
+    )
     style_axis(ax_metric)
 
     chosen_loss = loss.loc[loss["epoch"] == best_epoch].iloc[0]
@@ -366,17 +375,17 @@ def main():
         }
     )
     ASSEMBLY.mkdir(parents=True, exist_ok=True)
-    fig = plt.figure(figsize=(8.15, 6.6))
+    fig = plt.figure(figsize=(8.8, 5.6))
     outer = GridSpec(
         2,
         2,
         figure=fig,
-        left=0.10,
-        right=0.97,
-        bottom=0.09,
-        top=0.96,
-        hspace=0.34,
-        wspace=0.30,
+        left=0.095,
+        right=0.98,
+        bottom=0.10,
+        top=0.95,
+        hspace=0.52,
+        wspace=0.38,
     )
 
     rows = []

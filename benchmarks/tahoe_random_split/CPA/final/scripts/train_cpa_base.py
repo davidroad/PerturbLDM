@@ -168,7 +168,7 @@ def assign_condition_level_splits(adata_all):
         "train_validation_condition_overlap": 0,
         "official_train_external_ood_condition_overlap": 0,
     }
-    with open("./split_manifest/cpa_split_audit_seed42.json", "w") as handle:
+    with open("./split_manifest/cpa_split_verification_seed42.json", "w") as handle:
         json.dump(summary, handle, indent=2, default=json_default)
     logger.info(f"Corrected CPA cell counts: {summary['cpa_cell_counts']}")
     logger.info(
@@ -177,7 +177,7 @@ def assign_condition_level_splits(adata_all):
         f"valid={summary['validation_condition_count']}, "
         f"ood={summary['external_ood_condition_count']}"
     )
-    logger.info("Split audit passed: zero condition overlap")
+    logger.info("Split verification passed: zero condition overlap")
     return summary
 
 def analyze_data_distribution(adata_train, adata_test):
@@ -484,7 +484,7 @@ def main():
 
         split_counts = adata_all.obs["split"].value_counts().to_dict()
         logger.info(f"Split distribution: {split_counts}")
-        split_audit = assign_condition_level_splits(adata_all)
+        split_verification = assign_condition_level_splits(adata_all)
 
     except Exception as e:
         logger.error(f"Failed to load preprocessed data: {e}")

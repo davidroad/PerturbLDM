@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stream sparse H5ADs into auditable condition-level mean-expression caches."""
+"""Stream sparse H5ADs into verifiable condition-level mean-expression caches."""
 
 from __future__ import annotations
 

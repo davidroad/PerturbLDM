@@ -83,7 +83,7 @@ def normalize_cell_line(values: pd.Series) -> pd.Series:
 
 
 def normalize_drug(values: pd.Series) -> pd.Series:
-    # This matches the historical distribution workflow.  The authoritative
+    # This matches the condition-aligned distribution workflow.  The authoritative
     # OOD manifest contains no drug name with a literal underscore.
     return values.astype(str).str.strip().str.replace("_", "-", regex=False)
 
@@ -439,7 +439,7 @@ def build_tasks(
     return tasks
 
 
-def merge_and_audit(
+def merge_and_verify(
     tasks: list[tuple[str, str, tuple[str, ...]]],
     output_root: Path,
     expected: set[str],
@@ -587,13 +587,13 @@ def main() -> None:
                 flush=True,
             )
 
-    merged = merge_and_audit(tasks, args.output_root, expected)
+    merged = merge_and_verify(tasks, args.output_root, expected)
     reference_report = None
     if args.reference_csv:
         reference_report = compare_reference(
             merged,
             args.reference_csv,
-            args.output_root / "reference_equivalence_audit.json",
+            args.output_root / "reference_equivalence_verification.json",
         )
 
     run_report = {

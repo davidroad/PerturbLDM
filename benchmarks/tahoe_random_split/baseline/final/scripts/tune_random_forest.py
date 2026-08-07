@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Isolated full-data RF validation search without OOD/test access.
 
-The existing full-train min_samples_leaf=5 model is audited and reused
+The existing full-train min_samples_leaf=5 model is verified and reused
 read-only. New min_samples_leaf=20 and 50 forests are fitted on the same 29,277
 formal training conditions and compared on the same 3,252 formal validation
 conditions. Existing RF results, models and selection are never modified.
@@ -111,8 +111,8 @@ def result_row(
     }
 
 
-def audit_formal_features(cache, formal_root: Path, design_path: Path) -> dict:
-    input_hashes_path = formal_root / "provenance/rf/input_hashes_and_stats.json"
+def verify_formal_features(cache, formal_root: Path, design_path: Path) -> dict:
+    input_hashes_path = formal_root / "run_metadata/rf/input_hashes_and_stats.json"
     input_hashes = json.loads(input_hashes_path.read_text())
     current_files = {
         "cache_manifest": cache.root / "cache_manifest.json",
@@ -123,11 +123,11 @@ def audit_formal_features(cache, formal_root: Path, design_path: Path) -> dict:
     for key, path in current_files.items():
         require(
             input_hashes[key]["sha256"] == sha256(path),
-            f"formal leaf=5 provenance differs for {key}",
+            f"formal leaf=5 run_metadata differs for {key}",
         )
 
     condition_features, encoder = fit_train_only_condition_encoder(cache)
-    formal_encoder_path = formal_root / "provenance/rf/condition_encoder.json"
+    formal_encoder_path = formal_root / "run_metadata/rf/condition_encoder.json"
     require(
         json.loads(formal_encoder_path.read_text()) == encoder,
         "formal leaf=5 condition encoder differs",
@@ -136,7 +136,7 @@ def audit_formal_features(cache, formal_root: Path, design_path: Path) -> dict:
         cache, 1_500
     )
     formal_features_path = (
-        formal_root / "provenance/rf/selected_train_only_control_features.csv"
+        formal_root / "run_metadata/rf/selected_train_only_control_features.csv"
     )
     formal_features = pd.read_csv(formal_features_path)
     require(len(formal_features) == 1_500, "formal RF feature count differs")
@@ -174,7 +174,7 @@ def audit_formal_features(cache, formal_root: Path, design_path: Path) -> dict:
     }
 
 
-def audit_and_recompute_leaf5(
+def verify_and_recompute_leaf5(
     *,
     formal_root: Path,
     rf_contract: dict,
@@ -242,8 +242,8 @@ def audit_and_recompute_leaf5(
         source="read-only reused formal model after prediction recomputation",
         fit_seconds=float(final_fit["fit_seconds"]),
     )
-    audit = {
-        "status": "LEAF5_REUSE_AUDIT_OK",
+    verification = {
+        "status": "LEAF5_REUSE_VERIFICATION_OK",
         "formal_train_conditions": 29_277,
         "formal_validation_conditions": 3_252,
         "formal_train_ids_sha256": train_hash,
@@ -256,7 +256,7 @@ def audit_and_recompute_leaf5(
         "metric_recomputed_on_current_aligned_formal_validation": True,
         "test_response_accessed": False,
     }
-    return row, audit
+    return row, verification
 
 
 def fit_or_resume_candidate(
@@ -269,7 +269,7 @@ def fit_or_resume_candidate(
     x_valid: np.ndarray,
     y_valid: np.ndarray,
     valid_controls: np.ndarray,
-    provenance_hash: str,
+    run_metadata_hash: str,
     smoke_test: bool,
 ) -> dict:
     candidate_root.mkdir(parents=True, exist_ok=True)
@@ -280,7 +280,7 @@ def fit_or_resume_candidate(
     if result_path.is_file():
         result = json.loads(result_path.read_text())
         require(result["status"] == "CANDIDATE_OK", f"leaf={leaf} result did not pass")
-        require(result["provenance_sha256"] == provenance_hash, f"leaf={leaf} provenance changed")
+        require(result["run_metadata_sha256"] == run_metadata_hash, f"leaf={leaf} run_metadata changed")
         require(result["model_parameters"] == parameters, f"leaf={leaf} parameters changed")
         require(model_path.is_file() and sha256(model_path) == result["model_sha256"], f"leaf={leaf} model changed")
         require(metrics_path.is_file() and sha256(metrics_path) == result["metrics_sha256"], f"leaf={leaf} metrics changed")
@@ -289,7 +289,7 @@ def fit_or_resume_candidate(
     if artifact_path.is_file():
         artifact = json.loads(artifact_path.read_text())
         require(artifact["status"] == "MODEL_SAVED", f"leaf={leaf} artifact incomplete")
-        require(artifact["provenance_sha256"] == provenance_hash, f"leaf={leaf} artifact provenance changed")
+        require(artifact["run_metadata_sha256"] == run_metadata_hash, f"leaf={leaf} artifact run_metadata changed")
         require(artifact["model_parameters"] == parameters, f"leaf={leaf} artifact parameters changed")
         require(model_path.is_file() and sha256(model_path) == artifact["model_sha256"], f"leaf={leaf} saved model changed")
         fit_seconds = float(artifact["fit_seconds"])
@@ -310,7 +310,7 @@ def fit_or_resume_candidate(
             "model_parameters": parameters,
             "model": str(model_path),
             "model_sha256": sha256(model_path),
-            "provenance_sha256": provenance_hash,
+            "run_metadata_sha256": run_metadata_hash,
             "test_response_accessed": False,
             "smoke_test": bool(smoke_test),
         }
@@ -332,7 +332,7 @@ def fit_or_resume_candidate(
         "model_sha256": sha256(model_path),
         "training_conditions": int(len(x_train)),
         "validation_conditions": int(len(x_valid)),
-        "provenance_sha256": provenance_hash,
+        "run_metadata_sha256": run_metadata_hash,
         "test_response_accessed": False,
         "smoke_test": bool(smoke_test),
     }
@@ -354,7 +354,7 @@ def fit_or_resume_candidate(
         "model_sha256": sha256(model_path),
         "metrics": str(metrics_path),
         "metrics_sha256": sha256(metrics_path),
-        "provenance_sha256": provenance_hash,
+        "run_metadata_sha256": run_metadata_hash,
         "comparison_row": row,
         "test_response_accessed": False,
         "smoke_test": bool(smoke_test),
@@ -405,17 +405,17 @@ def main() -> None:
         require(design.shape[1] == 1_927, "formal RF input dimension differs")
 
     output_root.mkdir(parents=True, exist_ok=True)
-    provenance_root = output_root / "provenance"
-    provenance_root.mkdir(parents=True, exist_ok=True)
-    feature_audit = None
+    run_metadata_root = output_root / "run_metadata"
+    run_metadata_root.mkdir(parents=True, exist_ok=True)
+    feature_verification = None
     formal_selection_hash = None
     formal_model_hash = None
     if not args.smoke_test:
-        feature_audit = audit_formal_features(cache, formal_root, design_path)
+        feature_verification = verify_formal_features(cache, formal_root, design_path)
         formal_selection_hash = sha256(formal_root / "results/rf/selection.json")
         formal_model_hash = sha256(formal_root / "models/rf/final_random_forest.joblib")
 
-    provenance = {
+    run_metadata = {
         "status": "RF_FULL_DATA_VALIDATION_CONTRACT",
         "unit_of_analysis": contract["unit_of_analysis"],
         "target": contract["target"],
@@ -436,7 +436,7 @@ def main() -> None:
         "min_samples_leaf_compared": [5, 20, 50] if not args.smoke_test else [20, 50],
         "new_models_fitted": [20, 50],
         "formal_leaf5_reused_read_only": not args.smoke_test,
-        "feature_audit": feature_audit,
+        "feature_verification": feature_verification,
         "cache_manifest_sha256": sha256(cache_root / "cache_manifest.json"),
         "training_metadata_sha256": sha256(cache_root / "train/metadata.csv"),
         "genes_sha256": sha256(cache_root / "genes.csv"),
@@ -446,12 +446,12 @@ def main() -> None:
         "test_response_accessed": False,
         "smoke_test": bool(args.smoke_test),
     }
-    provenance_path = provenance_root / "analysis_contract.json"
-    if provenance_path.is_file():
-        require(json.loads(provenance_path.read_text()) == provenance, "RF sensitivity contract changed")
+    run_metadata_path = run_metadata_root / "analysis_contract.json"
+    if run_metadata_path.is_file():
+        require(json.loads(run_metadata_path.read_text()) == run_metadata, "RF sensitivity contract changed")
     else:
-        write_json_atomic(provenance_path, provenance)
-    provenance_hash = sha256(provenance_path)
+        write_json_atomic(run_metadata_path, run_metadata)
+    run_metadata_hash = sha256(run_metadata_path)
 
     x_train = np.asarray(design[train_indices], dtype=np.float32)
     y_train = np.asarray(delta[train_indices], dtype=np.float32)
@@ -466,7 +466,7 @@ def main() -> None:
 
     rows = []
     if not args.smoke_test:
-        leaf5_row, leaf5_audit = audit_and_recompute_leaf5(
+        leaf5_row, leaf5_verification = verify_and_recompute_leaf5(
             formal_root=formal_root,
             rf_contract=rf_contract,
             x_valid=x_valid,
@@ -476,7 +476,7 @@ def main() -> None:
             validation_hash=validation_hash,
             input_dim=int(design.shape[1]),
         )
-        write_json_atomic(provenance_root / "leaf5_reuse_audit.json", leaf5_audit)
+        write_json_atomic(run_metadata_root / "leaf5_reuse_verification.json", leaf5_verification)
         rows.append(leaf5_row)
 
     for leaf in NEW_LEAF_SIZES:
@@ -491,7 +491,7 @@ def main() -> None:
                 x_valid=x_valid,
                 y_valid=y_valid,
                 valid_controls=valid_controls,
-                provenance_hash=provenance_hash,
+                run_metadata_hash=run_metadata_hash,
                 smoke_test=args.smoke_test,
             )
         )

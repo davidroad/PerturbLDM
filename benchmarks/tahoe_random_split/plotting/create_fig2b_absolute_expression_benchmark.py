@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Recreate Fig. 2b from released condition-level derived metrics.
 
-This standalone wrapper replaces the historical v5 -> v3 -> v2 import chain.
+This standalone wrapper recreates the panel from paired release tables.
 It does not train or run any model.
 """
 
@@ -40,10 +40,10 @@ CLASS_COLORS = {
     "Matched control": "#9aa5b1", "Learned baseline": "#8aa7c4",
 }
 METRICS = [
-    ("Pearson_r", "Pearson", (0.935, 1.002)),
-    ("Spearman_r", "Spearman", (0.895, 1.002)),
-    ("R2", r"$R^2$", (0.84, 1.002)),
-    ("MAE", "MAE", (0.015, 0.060)),
+    ("Pearson_r", "Pearson", (0.91, 1.002)),
+    ("Spearman_r", "Spearman", (0.87, 1.002)),
+    ("R2", r"$R^2$", (0.78, 1.002)),
+    ("MAE", "MAE", (0.015, 0.075)),
 ]
 EXPECTED_CONDITIONS = 13_942
 EDGE = "#27313c"
@@ -117,9 +117,9 @@ def verify_summary(actual: pd.DataFrame, expected_path: Path) -> dict[str, objec
         suffixes=("_actual", "_expected"), indicator=True, validate="one_to_one",
     )
     if not merged["_merge"].eq("both").all():
-        raise ValueError("Historical summary has different method-metric keys")
+        raise ValueError("Expected summary has different method-metric keys")
     if not (merged["n_actual"] == merged["n_expected"]).all():
-        raise ValueError("Historical summary has different condition counts")
+        raise ValueError("Expected summary has different condition counts")
     numeric = ["mean", "median", "q05", "q25", "q75", "q95", "min", "max"]
     maximum = {
         column: float(np.max(np.abs(
@@ -129,11 +129,24 @@ def verify_summary(actual: pd.DataFrame, expected_path: Path) -> dict[str, objec
         for column in numeric
     }
     if max(maximum.values()) > 1e-12:
-        raise ValueError(f"Historical summary mismatch: {maximum}")
+        raise ValueError(f"Expected summary mismatch: {maximum}")
     return {"rows": int(len(actual)), "maximum_absolute_difference": maximum, "status": "pass"}
 
 
 def render(metrics: pd.DataFrame, outdir: Path) -> list[str]:
+    for metric, label, ylim in METRICS:
+        method_values = [
+            metrics.loc[metrics["method_canonical"].eq(method), metric].to_numpy()
+            for method in METHOD_ORDER
+        ]
+        visible_low = min(float(np.quantile(values, 0.05)) for values in method_values)
+        visible_high = max(float(np.quantile(values, 0.95)) for values in method_values)
+        if visible_low < ylim[0] or visible_high > ylim[1]:
+            raise ValueError(
+                f"{label} 5--95% whiskers ({visible_low:.6g}, {visible_high:.6g}) "
+                f"fall outside the configured y-axis limits {ylim}"
+            )
+
     plt.rcParams.update({
         "font.family": "DejaVu Sans", "svg.fonttype": "none", "pdf.fonttype": 42,
         "axes.edgecolor": "#343b45", "axes.linewidth": 0.8,
@@ -180,9 +193,18 @@ def render(metrics: pd.DataFrame, outdir: Path) -> list[str]:
 
     handles = [Patch(facecolor=CLASS_COLORS[name], edgecolor=EDGE, label=name)
                for name in ["PerturbLDM", "Simple marginal", "Matched control", "Learned baseline"]]
-    fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 0.005),
-               ncol=4, frameon=False, fontsize=7.0, handlelength=1.2, columnspacing=1.05)
-    fig.subplots_adjust(left=0.068, right=0.99, top=0.965, bottom=0.205,
+    fig.legend(
+        handles=handles,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.005),
+        ncol=2,
+        frameon=False,
+        fontsize=6.8,
+        handlelength=1.1,
+        handletextpad=0.45,
+        columnspacing=1.35,
+    )
+    fig.subplots_adjust(left=0.068, right=0.99, top=0.965, bottom=0.255,
                         wspace=0.20, hspace=0.28)
     outputs = []
     for extension, options in [("png", {"dpi": 300}), ("pdf", {}), ("svg", {})]:
@@ -206,7 +228,7 @@ def main() -> None:
         "summary": str(summary_path),
     }
     if args.expected_summary:
-        report["historical_summary_verification"] = verify_summary(summary, args.expected_summary)
+        report["expected_summary_verification"] = verify_summary(summary, args.expected_summary)
     if not args.summary_only:
         report["figures"] = render(metrics, args.outdir)
     report["status"] = "pass"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recreate the FAO--OXPHOS comparison shown in manuscript Fig. 5h."""
+"""Recreate the FAO–OXPHOS comparison shown in manuscript Fig. 5h."""
 
 from __future__ import annotations
 

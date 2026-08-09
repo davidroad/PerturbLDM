@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export FAO--OXPHOS source tables for PBMC response evaluation."""
+"""Export FAO–OXPHOS source tables for PBMC response evaluation."""
 
 from __future__ import annotations
 

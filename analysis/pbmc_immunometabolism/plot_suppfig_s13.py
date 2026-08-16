@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recreate Supplementary Fig. S13 from released PBMC source tables."""
+"""Recreate Supplementary Fig. S13a and S13b from released PBMC source tables."""
 
 from __future__ import annotations
 

@@ -26,6 +26,10 @@ population distributions.
 - `analysis/pbmc_immunometabolism/`: source-data export and plotting code for the FAO–OXPHOS analysis in Fig. 5h and Supplementary Fig. S13.
 - `docs/figures/`: the manuscript overview figure in PDF and README-preview formats.
 
+`FIGURE_SCRIPT_MAP.tsv` records the exact manuscript subpanel supported by each
+public figure-analysis script. Whole-figure assembly, panel placement and final
+layout scripts are not part of this repository.
+
 ## Installation
 
 Python ≥3.10 is required. Create an isolated environment and install

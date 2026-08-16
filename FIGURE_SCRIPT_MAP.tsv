@@ -1,0 +1,7 @@
+script_path	manuscript_output	public_scope
+benchmarks/tahoe_random_split/plotting/create_fig2b_absolute_expression_benchmark.py	Fig. 2b	Generates the named subpanel from released condition-level metrics; no whole-figure assembly.
+benchmarks/tahoe_random_split/plotting/create_suppfig_s3_model_selection.py	Supplementary Fig. S3e-h	Generates the named model-selection subpanels from released validation summaries; no manuscript-wide assembly.
+analysis/pbmc_immunometabolism/plot_fig5h.py	Fig. 5h	Generates the named subpanel from released PBMC FAO-OXPHOS source tables; no whole-figure assembly.
+analysis/pbmc_immunometabolism/plot_suppfig_s13.py	Supplementary Fig. S13a-b	Generates the named subpanels from released PBMC source tables; no manuscript-wide assembly.
+analysis/pbmc_immunometabolism/export_fao_oxphos_scores.py	Source values for Fig. 5h and Supplementary Fig. S13b	Exports the compact score table used by the named subpanels.
+analysis/pbmc_immunometabolism/export_oxphos_umap_coordinates.py	Source values for Supplementary Fig. S13a	Exports the compact coordinate table used by the named subpanel.

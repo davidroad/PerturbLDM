@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plot model-specific selection diagnostics for Tahoe learned comparators."""
+"""Plot model-selection diagnostics for Supplementary Fig. S3e-h."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ RELEASE_ROOT = SCRIPT_DIR.parents[3]
 DEFAULT_SOURCE = RELEASE_ROOT / "figshare" / "inputs" / "plotting_inputs" / "tahoe" / "suppfig_s3_selection_diagnostics"
 DEFAULT_OUTPUT = RELEASE_ROOT / "figshare" / "derived" / "validation" / "suppfig_s3_selection_diagnostics"
 SOURCE = DEFAULT_SOURCE
-ASSEMBLY = DEFAULT_OUTPUT
+OUTPUT = DEFAULT_OUTPUT
 PANEL_FONT = "DejaVu Sans"
 LIBERATION_FONT = Path("/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf")
 if LIBERATION_FONT.is_file():
@@ -337,7 +337,7 @@ def plot_chemcpa(ax):
 
 
 def save_summary(rows):
-    path = ASSEMBLY / "baseline_selection_summary.csv"
+    path = OUTPUT / "baseline_selection_summary.csv"
     with path.open("w", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
         writer.writeheader()
@@ -356,10 +356,10 @@ def parse_args():
 
 
 def main():
-    global SOURCE, ASSEMBLY
+    global SOURCE, OUTPUT
     args = parse_args()
     SOURCE = args.source_dir.resolve()
-    ASSEMBLY = args.output_dir.resolve()
+    OUTPUT = args.output_dir.resolve()
     mpl.rcParams.update(
         {
             "font.family": "DejaVu Sans",
@@ -374,7 +374,7 @@ def main():
             "svg.fonttype": "none",
         }
     )
-    ASSEMBLY.mkdir(parents=True, exist_ok=True)
+    OUTPUT.mkdir(parents=True, exist_ok=True)
     fig = plt.figure(figsize=(8.8, 5.6))
     outer = GridSpec(
         2,
@@ -395,7 +395,7 @@ def main():
     rows.append(plot_chemcpa(fig.add_subplot(outer[1, 1])))
     save_summary(rows)
 
-    output = ASSEMBLY / "supple3_baseline_selection_diagnostics"
+    output = OUTPUT / "supple3_baseline_selection_diagnostics"
     fig.savefig(output.with_suffix(".pdf"), bbox_inches="tight")
     fig.savefig(output.with_suffix(".svg"), bbox_inches="tight")
     fig.savefig(output.with_suffix(".png"), dpi=300, bbox_inches="tight")

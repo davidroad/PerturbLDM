@@ -17,6 +17,22 @@ to smaller, study-specific datasets. Evaluation spans complete expression
 profiles, matched-control effects, response genes and programmes, and local
 population distributions.
 
+## Reverse-diffusion visualizations
+
+The animations below show saved latent snapshots during reverse diffusion,
+from Gaussian noise to the generated cellular state. A single pooled PCA and
+UMAP coordinate system is used across all frames so that the display remains
+spatially stable. These are qualitative views of the generation process, not
+cell-trajectory or prediction-accuracy analyses.
+
+<p align="center">
+  <img src="docs/figures/denoising/PerturbLDM_Tahoe_reverse_diffusion.gif" alt="PerturbLDM reverse diffusion for Tahoe" width="720">
+</p>
+
+<p align="center">
+  <img src="docs/figures/denoising/PerturbLDM_PBMC_reverse_diffusion.gif" alt="PerturbLDM reverse diffusion for PBMCs" width="720">
+</p>
+
 ## Repository layout
 
 - `PerturbLDM/`: core latent VAE and conditional diffusion implementation, colon/PBMC configurations and runnable examples.
@@ -25,6 +41,7 @@ population distributions.
 - `benchmarks/tahoe_random_split/`: MLP, random-forest, CPA and chemCPA benchmark code plus figure wrappers.
 - `analysis/pbmc_immunometabolism/`: source-data export and plotting code for the FAO–OXPHOS analysis in Fig. 5h and Supplementary Fig. S13.
 - `docs/figures/`: the manuscript overview figure in PDF and README-preview formats.
+- `docs/figures/denoising/`: qualitative Tahoe and PBMC reverse-diffusion animations.
 
 `FIGURE_SCRIPT_MAP.tsv` records the exact manuscript subpanel supported by each
 public figure-analysis script. Whole-figure assembly, panel placement and final

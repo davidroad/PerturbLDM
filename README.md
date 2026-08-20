@@ -22,9 +22,12 @@ population distributions.
 The animations below show saved latent snapshots during reverse diffusion,
 from Gaussian noise to the generated cellular state. A single pooled PCA and
 UMAP coordinate system is used across all frames so that the display remains
-spatially stable. These are qualitative views of the generation process, not
-cell-trajectory or prediction-accuracy analyses. Later denoising steps are
-shown more slowly to make the emerging latent structure easier to follow.
+spatially stable. Each point represents one fixed sampled cell; no density
+layer is applied. These are qualitative views of the generation process, not
+cell-trajectory or prediction-accuracy analyses. The displayed denoising *t*
+increases from 0 at the Gaussian-noise state to 1000 at the final generated
+state. Later denoising steps are shown more slowly to make the emerging latent
+structure easier to follow.
 
 <p align="center">
   <img src="docs/figures/denoising/PerturbLDM_Fetal_colon_reverse_diffusion.gif" alt="PerturbLDM reverse diffusion for fetal-colon development" width="720">

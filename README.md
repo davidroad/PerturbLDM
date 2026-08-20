@@ -23,14 +23,19 @@ The animations below show saved latent snapshots during reverse diffusion,
 from Gaussian noise to the generated cellular state. A single pooled PCA and
 UMAP coordinate system is used across all frames so that the display remains
 spatially stable. These are qualitative views of the generation process, not
-cell-trajectory or prediction-accuracy analyses.
+cell-trajectory or prediction-accuracy analyses. Later denoising steps are
+shown more slowly to make the emerging latent structure easier to follow.
 
 <p align="center">
-  <img src="docs/figures/denoising/PerturbLDM_Tahoe_reverse_diffusion.gif" alt="PerturbLDM reverse diffusion for Tahoe" width="720">
+  <img src="docs/figures/denoising/PerturbLDM_Fetal_colon_reverse_diffusion.gif" alt="PerturbLDM reverse diffusion for fetal-colon development" width="720">
 </p>
 
 <p align="center">
-  <img src="docs/figures/denoising/PerturbLDM_PBMC_reverse_diffusion.gif" alt="PerturbLDM reverse diffusion for PBMCs" width="720">
+  <img src="docs/figures/denoising/PerturbLDM_PBMC_cell_type_reverse_diffusion.gif" alt="PerturbLDM reverse diffusion for PBMCs coloured by cell type" width="720">
+</p>
+
+<p align="center">
+  <img src="docs/figures/denoising/PerturbLDM_PBMC_reverse_diffusion.gif" alt="PerturbLDM reverse diffusion for PBMCs coloured by stimulation state" width="720">
 </p>
 
 ## Repository layout
@@ -41,7 +46,7 @@ cell-trajectory or prediction-accuracy analyses.
 - `benchmarks/tahoe_random_split/`: MLP, random-forest, CPA and chemCPA benchmark code plus figure wrappers.
 - `analysis/pbmc_immunometabolism/`: source-data export and plotting code for the FAO–OXPHOS analysis in Fig. 5h and Supplementary Fig. S13.
 - `docs/figures/`: the manuscript overview figure in PDF and README-preview formats.
-- `docs/figures/denoising/`: qualitative Tahoe and PBMC reverse-diffusion animations.
+- `docs/figures/denoising/`: qualitative fetal-colon and PBMC reverse-diffusion animations.
 
 `FIGURE_SCRIPT_MAP.tsv` records the exact manuscript subpanel supported by each
 public figure-analysis script. Whole-figure assembly, panel placement and final
